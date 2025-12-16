@@ -21,8 +21,6 @@ class FlowWebViewProvider {
     }
 
     async updateWebview() {
-      console.log("AAA");
-
       if (!this.webView) {
         return;
       }
@@ -40,8 +38,20 @@ class FlowWebViewProvider {
           return;
       }
 
+      const canonicalizeSef = convertXSLtoSEF(this.context, "canonicalize");
+
+      const preprocessXml = SaxonJS.transform({
+        stylesheetText: canonicalizeSef,
+        sourceText: config,
+        destination: "serialized"
+      });
+
       const isAdapter = config.split("\n")[0].includes("adapter");
-      const sef = convertXSLtoSEF(this.context, isAdapter);
+
+      const mermaidSef = convertXSLtoSEF(
+        this.context,
+        isAdapter ? "adapter2mermaid" : "configuration2mermaid"
+      );
 
       const paramsPath = path.join(this.context.extensionPath, "resources/flow/xml/params.xml");
       const params = fs.readFileSync(paramsPath, 'utf8');
@@ -50,9 +60,9 @@ class FlowWebViewProvider {
         text: params
       });
 
-      const result = SaxonJS.transform({
-        stylesheetText: sef,
-        sourceText: config,
+      const mermaid = SaxonJS.transform({
+        stylesheetText: mermaidSef,
+        sourceText: preprocessXml.principalResult,
         destination: "serialized",
         stylesheetParams: {
           frankElements: paramsXdm
@@ -70,25 +80,32 @@ class FlowWebViewProvider {
       const scriptUri = this.webView.webview.asWebviewUri(scriptPath);
 
       frankLayout.initMermaid2Svg(frankLayout.getFactoryDimensions());
-      const svg = await frankLayout.mermaid2svg(result.principalResult);
+      const svg = await frankLayout.mermaid2svg(mermaid.principalResult);
       
       this.webView.webview.html = getWebviewContent(svg, cssUri, scriptUri);
     }
 
 }
 
-function convertXSLtoSEF(context, isAdapter) {
-  const xslPath = isAdapter
-    ? path.join(context.extensionPath, "resources/flow/xsl/adapter2mermaid.xsl")
-    : path.join(context.extensionPath, "resources/flow/xsl/configuration2mermaid.xsl");
+function convertXSLtoSEF(context, xsl) {
+  const xslPath = path.join(
+    context.extensionPath,
+    "resources/flow/xsl",
+    xsl + ".xsl"
+  );
 
   const env = SaxonJS.getPlatform();
   const doc = env.parseXmlFromString(env.readFile(xslPath));
 
-  doc._saxonBaseUri = "file:///";
+  const lookupDir = path.join(
+    context.extensionPath,
+    "resources/flow/xml"
+  ).replace(/\\/g, "/");
+  doc._saxonBaseUri = `file://${lookupDir}/`;
 
   return JSON.stringify(SaxonJS.compile(doc));
 }
+
 
 function getCurrentConfiguration() {
   const editor = vscode.window.activeTextEditor;
