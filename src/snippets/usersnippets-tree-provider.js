@@ -17,11 +17,11 @@ class UserSnippetsTreeProvider {
   rebuild() {
     const snippetsPerNameTreeItems = [];
 
-    const userSnippets = this.userSnippetsService.getUserSnippets();
+    let userSnippets = this.userSnippetsService.getUserSnippets();
 
     for (let name in userSnippets) {
       snippetsPerNameTreeItems.push(
-        this.convertUserSnippetsToSnippetNameTreeItems(name, userSnippets[name])
+        this.convertUserSnippetsToSnippetNameTreeItems(name, userSnippets[name])                                                                                             
       );
     }
 
@@ -52,6 +52,7 @@ class SnippetNameTreeItem {
     this.userSnippetsPerName = userSnippetsPerName;
     this.collapsibleState = collapsibleState;
     this.snippetTreeItems = [];
+    this.contextValue = "snippetName";
 
     this.command = {
       command: "frank.showSnippetsViewPerName",
@@ -83,6 +84,7 @@ class SnippetTreeItem extends vscode.TreeItem {
     this.id = `${name}:${prefix}:${index}`;
     this.prefix = prefix;
     this.name = name;
+    this.index = index;
 
     this.contextValue = "snippetTreeItem";
   }

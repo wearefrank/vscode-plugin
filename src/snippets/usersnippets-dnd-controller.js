@@ -11,7 +11,7 @@ class UserSnippetsDndController {
 
   async handleDrag(sourceItems, dataTransfer, token) {
     const payload = sourceItems.map(item => ({
-      prefix: item.prefix,
+      index: item.index,
       parent: item.name
     }));
 
@@ -26,25 +26,21 @@ class UserSnippetsDndController {
     
     const payload = JSON.parse(dataItem.value); 
 
-    if (target instanceof SnippetNameTreeItem) {
-      let targetParentName = target.label;
+    if (target?.contextValue === "snippetName") {
+      let targetParent = target.label;
 
-      payload.forEach(snippet =>  {
-        let oldParent = snippet.parent;        
-        const snippetArr = this.userSnippetsTreeProvider.userSnippets[oldParent];
+      payload.forEach(snippetTreeItem =>  {
+        let userSnippets = this.userSnippetsService.getUserSnippets();
 
-        const i = snippetArr.findIndex(s => s.prefix === snippet.prefix);
-
-        const snippeta = snippetArr.splice(i, 1)[0];
-
-        this.userSnippetsTreeProvider.userSnippets[targetParentName].push(snippeta);
+        let oldParent = snippetTreeItem.parent;
+        let snippet = userSnippets[oldParent][snippetTreeItem.index];
 
         try {
-          this.userSnippetsService.deleteUserSnippet(oldParent, i);
-        
-          let userSnippets = this.userSnippetsService.getUserSnippets();
+          this.userSnippetsService.deleteUserSnippet(oldParent, snippetTreeItem.index);
 
-          userSnippets[targetParentName].push(snippeta);
+          userSnippets = this.userSnippetsService.getUserSnippets();
+        
+          userSnippets[targetParent].push(snippet);
 
           this.userSnippetsService.setUserSnippets(userSnippets);
         } catch (err) {
