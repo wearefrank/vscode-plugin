@@ -82,8 +82,6 @@ class FlowWebViewProvider {
       frankLayout.initMermaid2Svg(frankLayout.getFactoryDimensions());
       const svg = await frankLayout.mermaid2svg(mermaid.principalResult);
 
-      console.log(svg);
-      
       this.webView.webview.html = getWebviewContent(svg, cssUri, scriptUri);
     }
 
