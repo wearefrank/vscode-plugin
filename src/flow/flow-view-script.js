@@ -1,30 +1,23 @@
-const container = document.getElementById("svgContainer");
 const svg = container.querySelector("svg");
 
-function fit() {
+function fitSvg() {
     if (!svg) return;
 
-    requestAnimationFrame(() => {
-        const bbox = svg.getBBox();
-        if (bbox.width === 0 || bbox.height === 0) return;
+    const bbox = svg.getBBox();
+    if (!bbox.width || !bbox.height) return;
 
-        const availableW = container.parentElement.clientWidth;
-        const availableH = container.parentElement.clientHeight;
+    const PADDING = 10;
 
-        const scale = Math.min(
-            availableW / bbox.width,
-            availableH / bbox.height,
-        );
+    svg.setAttribute(
+        "viewBox",
+        `${bbox.x - PADDING} ${bbox.y - PADDING} ${bbox.width + PADDING * 2} ${bbox.height + PADDING * 2}`
+    );
 
-        svg.style.transformOrigin = "center center";
-        svg.style.transform = `scale(${scale})`;
-
-    });
+    svg.removeAttribute("width");
+    svg.removeAttribute("height");
+    svg.setAttribute("preserveAspectRatio", "xMidYMid meet");
 }
 
-window.addEventListener("load", () => {
-    fit();
-    new ResizeObserver(fit).observe(container.parentElement);
-});
 
-window.addEventListener("resize", fit);
+
+window.addEventListener("load", fitSvg);

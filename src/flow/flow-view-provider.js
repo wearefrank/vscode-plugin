@@ -81,6 +81,8 @@ class FlowWebViewProvider {
 
       frankLayout.initMermaid2Svg(frankLayout.getFactoryDimensions());
       const svg = await frankLayout.mermaid2svg(mermaid.principalResult);
+
+      console.log(svg);
       
       this.webView.webview.html = getWebviewContent(svg, cssUri, scriptUri);
     }
@@ -125,10 +127,8 @@ function getWebviewContent(svg, cssUri, scriptUri) {
         <link rel="stylesheet" href="${cssUri}">
       </head>
       <body>
-        <div class="container">
-          <div id="svg">${svg}</div>
-        </div>
-
+        <div id="container">${svg}</div>
+        <script src="${scriptUri}"></script>
       </body>
   </html>
   `;
