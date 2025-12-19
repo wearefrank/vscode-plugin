@@ -180,7 +180,7 @@ editIcon.addEventListener("click", () => {
 
     if (!editingName) {
         vscode.postMessage({
-            command: "changeName",
+            command: "changeNameOfUserSnippets",
             newName: snippetName.value
         });
     }

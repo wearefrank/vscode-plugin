@@ -52,8 +52,8 @@ function showSnippetsView(context, name, userSnippetsTreeProvider, userSnippetsS
                 case 'exportUserSnippets':
                     exportUserSnippets(context, message.name, userSnippetsService);
                     break;
-                case 'changeNameOfuserSnippets':
-                    changeNameOfuserSnippets(context, name, message.newName, userSnippetsService, userSnippetsTreeProvider);
+                case 'changeNameOfUserSnippets':
+                    changeNameOfUserSnippets(context, name, message.newName, userSnippetsService, userSnippetsTreeProvider);
                     break;
                 case 'copySnippet':
                     copySnippet(message.snippet);
@@ -105,7 +105,7 @@ function exportUserSnippets(context, name, userSnippetsService) {
     userSnippetsService.uploadUserSnippet(name);
 }
 
-function changeNameOfuserSnippets(context, oldName, newName, userSnippetsService, userSnippetsTreeProvider) {
+function changeNameOfUserSnippets(context, oldName, newName, userSnippetsService, userSnippetsTreeProvider) {
     userSnippetsService.changeNameOfUserSnippets(oldName, newName);
 
     userSnippetsTreeProvider.rebuild();
