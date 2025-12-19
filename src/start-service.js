@@ -45,7 +45,7 @@ class StartService {
         term.show();
 
         term.sendText(`cd "${workingDir}"`);
-        term.sendText(`ant.bat`);
+        term.sendText(`../frank-runner/ant.bat`);
     }
 
     async startWithDocker() {
@@ -56,7 +56,7 @@ class StartService {
         var term = vscode.window.createTerminal('cmd');
         term.show();
     
-        term.sendText(`cd ${workingDir}`);
+        term.sendText(`cd "${workingDir}"`);
         term.sendText(`docker build -t ${projectName} .`);
         term.sendText(`docker rm ${projectName}-container`);
         term.sendText(`docker run --name ${projectName}-container ${projectName}`);
@@ -68,7 +68,7 @@ class StartService {
         var term = vscode.window.createTerminal('cmd');
         term.show();
     
-        term.sendText(`cd ${workingDir}`);
+        term.sendText(`cd "${workingDir}"`);
         term.sendText('docker compose -f compose.frank.loc.yaml up --build');
     }
 }
