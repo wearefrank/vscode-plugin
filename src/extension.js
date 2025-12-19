@@ -48,6 +48,10 @@ function activate(context) {
 		dragAndDropController: userSnippetsDndController
 	});
 
+	vscode.commands.registerCommand('frank.test', (name) => {
+		userSnippetsService.newName(userSnippetsTreeProvider);
+	})
+
 	vscode.commands.registerCommand('frank.showSnippetsViewPerName', (name) => {
 		showSnippetsView(context, name, userSnippetsTreeProvider, userSnippetsService);
 	})
@@ -57,14 +61,28 @@ function activate(context) {
 	});
 
 	vscode.commands.registerCommand("frank.deleteUserSnippet", (item) => {
-		const userSnippets = userSnippetsService.deleteUserSnippet(item.label, item.id.split(":")[2]);
+		const userSnippets = userSnippetsService.deleteUserSnippet(item.name, item.index);
 
 		userSnippetsTreeProvider.rebuild();
 		userSnippetsTreeProvider.refresh();
 	});
 
 	vscode.commands.registerCommand("frank.exportUserSnippet", (item) => {
-		userSnippetsService.uploadUserSnippet(item.label, item.id.split(":")[2]);
+		userSnippetsService.uploadUserSnippet(item.name, item.index);
+	});
+
+	vscode.commands.registerCommand("frank.deleteAllUserSnippetByName", (item) => {
+		const userSnippets = userSnippetsService.deleteAllUserSnippetByName(item.label);
+
+		userSnippetsTreeProvider.rebuild();
+		userSnippetsTreeProvider.refresh();
+	});
+
+	vscode.commands.registerCommand("frank.changeName", (item) => {
+		const userSnippets = userSnippetsService.changeName(item.label, "AAA");
+
+		userSnippetsTreeProvider.rebuild();
+		userSnippetsTreeProvider.refresh();
 	});
 
 	vscode.commands.registerCommand('frank.createNewFrank', async function () {
@@ -87,7 +105,15 @@ function activate(context) {
         const term = vscode.window.createTerminal('cmd');
         term.show();
 
-        term.sendText('git clone https://github.com/wearefrank/frank-runner.git');
+		const workspaceFolders = vscode.workspace.workspaceFolders;
+
+		const rootPath = workspaceFolders[0].uri.fsPath;
+		const targetPath = path.join(rootPath, "frank-runner");
+
+		if (!fs.existsSync(targetPath) && !fs.statSync(targetPath).isDirectory()) {
+			term.sendText('git clone https://github.com/wearefrank/frank-runner.git');
+		}
+        
         term.sendText(`git clone https://github.com/wearefrank/skeleton.git ${projectName}`);
         term.sendText(`Remove-Item -Path "${projectName}/.git" -Recurse -Force`);
     });
@@ -117,15 +143,7 @@ function activate(context) {
 	vscode.commands.registerCommand('frank.addUserSnippet', async function () {
 		await userSnippetsService.addUserSnippet(userSnippetsTreeProvider);
 
-		vscode.window.showInformationMessage(
-			"Snippet added! Reload to activate?",
-			"Reload now",
-			"Later"
-		).then((choice) => {
-			if (choice === "Reload now") {
-				vscode.commands.executeCommand("workbench.action.reloadWindow");
-			}
-		});
+		vscode.window.showInformationMessage("Snippet added!");
 	});
 
 	vscode.languages.registerDocumentLinkProvider({ language: 'xml', scheme: 'file' }, {
