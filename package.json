@@ -3,7 +3,7 @@
   "publisher": "wearefrank",
   "displayName": "Frank!Framework",
   "description": "A plugin to help users with the development of their Frank!Framework integrations!",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "engines": {
     "vscode": "^1.107.0"
   },
@@ -125,14 +125,14 @@
         {
           "id": "flowView",
           "title": "Frank!Flow",
-          "icon": "resources/Logo_FRANK_Blok_RGB.svg"
+          "icon": "resources/wearefrank_logo.svg"
         }
       ],
       "activitybar": [
         {
           "id": "frank",
           "title": "Frank!Framework",
-          "icon": "resources/Logo_FRANK_Blok_RGB.svg"
+          "icon": "resources/wearefrank_logo.svg"
         }
       ]
     },
