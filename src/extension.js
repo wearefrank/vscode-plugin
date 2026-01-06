@@ -1,13 +1,15 @@
 const vscode = require('vscode');
 const fs = require('fs');
 const path = require('path');
+const { exec } = require('child_process');
+const SaxonJS = require('saxon-js');
+
 const StartService = require("./start-service.js");
 const UserSnippetsService = require("./snippets/usersnippets-service.js");
 const { showSnippetsView } = require('./snippets/usersnippets-view.js');
 const FlowWebViewProvider = require('./flow/flow-view-provider.js');
 const { UserSnippetsTreeProvider } = require("./snippets/usersnippets-tree-provider.js");
 const { UserSnippetsDndController } = require("./snippets/usersnippets-dnd-controller.js")
-const SaxonJS = require('saxon-js');
 
 /**
  * @param {vscode.ExtensionContext} context
@@ -78,13 +80,6 @@ function activate(context) {
 		userSnippetsTreeProvider.refresh();
 	});
 
-	vscode.commands.registerCommand("frank.changeName", (item) => {
-		const userSnippets = userSnippetsService.changeName(item.label, "AAA");
-
-		userSnippetsTreeProvider.rebuild();
-		userSnippetsTreeProvider.refresh();
-	});
-
 	vscode.commands.registerCommand('frank.createNewFrank', async function () {
         const name = await vscode.window.showInputBox({
             placeHolder: 'Give your project a name',
@@ -110,13 +105,37 @@ function activate(context) {
 		const rootPath = workspaceFolders[0].uri.fsPath;
 		const targetPath = path.join(rootPath, "frank-runner");
 
-		if (!fs.existsSync(targetPath) && !fs.statSync(targetPath).isDirectory()) {
-			term.sendText('git clone https://github.com/wearefrank/frank-runner.git');
+		if (!fs.existsSync(targetPath)) {
+			await execAsync(
+				'git clone https://github.com/wearefrank/frank-runner.git',
+				rootPath
+			);
 		}
-        
-        term.sendText(`git clone https://github.com/wearefrank/skeleton.git ${projectName}`);
-        term.sendText(`Remove-Item -Path "${projectName}/.git" -Recurse -Force`);
-    });
+
+        await execAsync(
+            `git clone https://github.com/wearefrank/skeleton.git ${projectName}`,
+            rootPath
+        );
+
+		const filePath = path.join(rootPath, projectName, "skeletonrc.json");
+
+		let content = JSON.parse(fs.readFileSync(filePath, 'utf8'));
+
+		const mappings = {
+			"{{ cookiecutter.instance_name }}": projectName,
+			"{{ cookiecutter.instance_name_lc }}": projectName,
+			"{{ cookiecutter.configuration_name }}": projectName
+    	};
+
+		content.mappings = mappings;
+
+		fs.writeFileSync(filePath, JSON.stringify(content, null, 2));
+    
+		await execAsync(
+            `powershell -Command "Remove-Item -Path '.git' -Recurse -Force"`,
+  			path.join(rootPath, projectName)
+        );
+	});
 
 	vscode.commands.registerCommand('frank.startAnt', async function () {
 		startService.startWithAnt();
@@ -172,6 +191,18 @@ function activate(context) {
 			return links;
 		}
 	});
+	
+	function execAsync(command, cwd) {
+		return new Promise((resolve, reject) => {
+			exec(command, { cwd }, (error, stdout, stderr) => {
+				if (error) {
+					reject(stderr || error);
+				} else {
+					resolve(stdout);
+				}
+			});
+		});
+	}
 }
 
 function deactivate() {}
