@@ -97,9 +97,6 @@ function activate(context) {
 
         projectName = name.trim();
 
-        const term = vscode.window.createTerminal('cmd');
-        term.show();
-
 		const workspaceFolders = vscode.workspace.workspaceFolders;
 
 		const rootPath = workspaceFolders[0].uri.fsPath;
@@ -122,9 +119,9 @@ function activate(context) {
 		let content = JSON.parse(fs.readFileSync(filePath, 'utf8'));
 
 		const mappings = {
-			"{{ cookiecutter.instance_name }}": projectName,
-			"{{ cookiecutter.instance_name_lc }}": projectName,
-			"{{ cookiecutter.configuration_name }}": projectName
+			"{{ cookiecutter.instance_name }}": projectName.toLowerCase(),
+			"{{ cookiecutter.instance_name_lc }}": projectName.toLowerCase(),
+			"{{ cookiecutter.configuration_name }}": projectName.toLowerCase()
     	};
 
 		content.mappings = mappings;
