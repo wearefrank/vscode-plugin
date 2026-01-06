@@ -135,6 +135,11 @@ function activate(context) {
             `powershell -Command "Remove-Item -Path '.git' -Recurse -Force"`,
   			path.join(rootPath, projectName)
         );
+
+		await execAsync(
+            `powershell -Command "node ./skeleton.js"`,
+  			path.join(rootPath, projectName)
+        );
 	});
 
 	vscode.commands.registerCommand('frank.startAnt', async function () {
