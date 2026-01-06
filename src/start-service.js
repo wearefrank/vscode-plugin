@@ -3,7 +3,20 @@ const fs = require('fs');
 const path = require('path');
 
 class StartService {
-    constructor() {}
+    constructor(context) {
+        this.context = context;
+    }
+
+    async createFile(workspaceRoot,  file) {
+        console.log(workspaceRoot);
+
+        const targetPath = path.join(workspaceRoot, file)
+
+        const filePath = path.join(this.context.extensionPath, 'resources', file)
+        const content = fs.readFileSync(filePath, 'utf8');
+        
+        fs.writeFileSync(targetPath, content, "utf8");
+    }
 
     async getWorkingDirectory(file) {
         const editor = vscode.window.activeTextEditor;
@@ -13,10 +26,17 @@ class StartService {
             return;
         }
 
-        const currentDir = path.dirname(editor.document.uri.fsPath);
+        const workspaceFolder = vscode.workspace.getWorkspaceFolder(
+            editor.document.uri
+        );
+
+        const workspaceRoot = workspaceFolder.uri.fsPath;
+
+        let currentDir = path.dirname(editor.document.uri.fsPath);
+        let lastDir = currentDir;
 
         while (true) {
-            const matches = await vscode.workspace.findFiles(
+            let matches = await vscode.workspace.findFiles(
                 new vscode.RelativePattern(currentDir, file),
                 null,
                 1
@@ -26,18 +46,42 @@ class StartService {
                 return currentDir;
             }
 
-            const parentDir = path.dirname(currentDir);
+            let parentDir = path.dirname(currentDir);
 
-            if (parentDir === currentDir) {
-                vscode.window.showErrorMessage(`No file matching '${file}' found in any parent folder.`);
+            if (currentDir === workspaceRoot) {
+                 const choice = await vscode.window.showInformationMessage(
+                    'File doesn\'t exist in the current project, create new file?',
+                    'Yes',
+                    'Cancel'
+                );
+                
+                if (choice === 'Yes') {
+                    try {
+                        this.createFile(lastDir, file);
+                        return lastDir;
+                    } catch (err) {
+                        console.log(err);
+                    }
+                } else {
+                    return;
+                }
+
                 return;
             }
 
+            lastDir = currentDir;
             currentDir = parentDir;
         }
     }
 
     async startWithAnt() {
+        const editor = vscode.window.activeTextEditor;
+
+        if (!editor) {
+            vscode.window.showErrorMessage("No active editor");
+            return;
+        }
+
         const workingDir = await this.getWorkingDirectory("build.xml");
 
         const term = vscode.window.createTerminal("Frank Ant");
@@ -49,6 +93,13 @@ class StartService {
     }
 
     async startWithDocker() {
+        const editor = vscode.window.activeTextEditor;
+
+        if (!editor) {
+            vscode.window.showErrorMessage("No active editor");
+            return;
+        }
+
         const workingDir = await this.getWorkingDirectory("Dockerfile");
 
         const projectName = path.basename(path.dirname(workingDir));
@@ -63,8 +114,15 @@ class StartService {
     }
 
     async startWithDockerCompose() {
-        const workingDir = await this.getWorkingDirectory("compose**.yaml");
-    
+        const editor = vscode.window.activeTextEditor;
+
+        if (!editor) {
+            vscode.window.showErrorMessage("No active editor");
+            return;
+        }
+
+        const workingDir = await this.getWorkingDirectory("compose.frank.loc.yaml");
+
         var term = vscode.window.createTerminal('cmd');
         term.show();
     

@@ -1,0 +1,87 @@
+# This docker-compose file brings up an instance for local development.
+#
+# For local development it is recommended to a 'sync+restart' watch action for each configuration's 'DeploymentSpecific' files.
+# This ensures that the container is automatically restarted when a change is made in it.
+#
+# Frank!Flow is included to provide a visual representation of the integration's flow. It allows users to visually configure
+# adapters by dragging and connecting components in a graphical environment, rather than directly editing XML code. 
+# This makes the Frank!Framework more accessible, especially for users who are less familiar with XML.
+#
+# To use this docker-compose file:
+#    docker compose -f ./compose.frank.loc.yaml <command> (eg. up, down)
+#
+# Recommended for local developent:
+#    docker compose -f ./compose.frank.loc.yaml up --build --force-recreate --watch
+#
+# Access the Frank!Console by navigating to `http://frank.localtest.me:8080/` or `http://localhost:8080/`.
+# Access Frank!Flow by navigating to `http://frank-flow.localtest.me:8090/` or `http://localhost:8090/`.
+#
+services:
+  frank:
+    build:
+      context: .
+      pull: true # makes sure that the base image is forcefully pulled when using 'latest' tag.
+    image: ${IMAGE_ID:-${IMAGE_TAG:-ghcr.io/wearefrank/25111427}}
+    environment:
+      dtap.stage: LOC
+      configurations.directory.classLoaderType: ScanningDirectoryClassLoader
+    volumes:
+      - h2-data:/opt/frank/h2:rw
+      - logs:/usr/local/tomcat/logs:rw
+    develop:
+      watch:
+        - action: sync+restart
+          path: ./src/main/configurations/25111427/DeploymentSpecifics.properties
+          target: /opt/frank/configurations/25111427/DeploymentSpecifics.properties
+        - action: sync
+          path: ./src/main/configurations
+          target: /opt/frank/configurations
+        - action: sync
+          path: ./src/main/resources
+          target: /opt/frank/resources
+        - action: sync
+          path: ./src/test/testtool
+          target: /opt/frank/testtool
+        - action: sync+restart
+          path: ./src/main/secrets
+          target: /opt/frank/secrets
+        - action: sync+restart
+          path: ./src/main/resources/DeploymentSpecifics.properties
+          target: /opt/frank/resources/DeploymentSpecifics.properties
+        - action: sync+restart
+          path: ./src/main/resources/ladybug/DatabaseChangelog_Custom.xml
+          target: /opt/frank/resources/ladybug/DatabaseChangelog_Custom.xml
+        - action: sync+restart
+          path: ./src/main/resources/springIbisTestToolCustom.xml
+          target: /opt/frank/resources/springIbisTestToolCustom.xml
+        - action: rebuild
+          path: ./src/main/java
+        - action: rebuild
+          path: ./src/main/webapp/META-INF/context.xml
+    networks:
+      frank:
+        aliases:
+          - frank.localtest.me
+    ports:
+      - "${PORT:-8080}:8080"
+    restart: unless-stopped
+
+  frank-flow:
+    image: frankframework/frank-flow:latest
+    environment:
+      configurations.directory: /opt/frank/configurations
+    volumes:
+      - ./src/main/:/opt/frank/:rw
+    networks:
+      frank:
+        aliases:
+          - frank-flow.localtest.me
+    ports:
+      - "8090:8080"
+
+volumes:
+  logs:
+  h2-data:
+
+networks:
+  frank: {}

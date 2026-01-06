@@ -20,7 +20,7 @@ function activate(context) {
 	const userSnippetsService = new UserSnippetsService(context);
 	const userSnippetsTreeProvider = new UserSnippetsTreeProvider(context, userSnippetsService);
 	const userSnippetsDndController = new UserSnippetsDndController(context, userSnippetsTreeProvider, userSnippetsService);
-	const startService = new StartService();
+	const startService = new StartService(context);
 
 	userSnippetsService.ensureSnippetsFilesExists();
 	userSnippetsService.loadFrankFrameworkSnippets();
