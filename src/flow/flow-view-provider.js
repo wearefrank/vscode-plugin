@@ -79,11 +79,20 @@ class FlowWebViewProvider {
       );
       const scriptUri = this.webView.webview.asWebviewUri(scriptPath);
 
+      const zoomScriptPath = vscode.Uri.file(
+          path.join(this.context.extensionPath, 'node_modules/svg-pan-zoom/dist/svg-pan-zoom.min.js')
+      );
+      const zoomScriptUri = this.webView.webview.asWebviewUri(zoomScriptPath);
+
+      const codiconCss = this.webView.webview.asWebviewUri(
+          vscode.Uri.joinPath(this.context.extensionUri, 'resources/css', 'codicon.css')
+      );
+
       try {
         frankLayout.initMermaid2Svg(frankLayout.getFactoryDimensions());
         const svg = await frankLayout.mermaid2svg(mermaid.principalResult);
 
-        this.webView.webview.html = getWebviewContent(svg, cssUri, scriptUri);
+        this.webView.webview.html = getWebviewContent(svg, cssUri, codiconCss, scriptUri, zoomScriptUri);
       } catch (err) {
         this.webView.webview.html = getErrorWebviewContent("This XML cannot be converted to a Frank!Flow");
       }
@@ -118,7 +127,7 @@ function getCurrentConfiguration() {
   return editor.document.getText();
 }
 
-function getWebviewContent(svg, cssUri, scriptUri) {
+function getWebviewContent(svg, cssUri, codiconCss, scriptUri, zoomScriptUri) {
   return `
   <!DOCTYPE html>
   <html>
@@ -126,9 +135,19 @@ function getWebviewContent(svg, cssUri, scriptUri) {
         <meta charset="UTF-8">
         <title>Frank!Flow</title>
         <link rel="stylesheet" href="${cssUri}">
+        <link href="${codiconCss}" rel="stylesheet">
       </head>
       <body>
-        <div id="container">${svg}</div>
+        <div id="container">
+          ${svg}
+          <div id="toolbar">
+            <i class="codicon codicon-zoom-in" id="zoom-in"></i>
+            <i class="codicon codicon-discard" id="reset"></i>
+            <i class="codicon codicon-zoom-out" id="zoom-out"></i>
+          </div>
+        </div>
+
+        <script src="${zoomScriptUri}"></script>
         <script src="${scriptUri}"></script>
       </body>
   </html>

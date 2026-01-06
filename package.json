@@ -41,7 +41,7 @@
           "group": "Frank@1"
         }
       ],
-      "view/title" : [
+      "view/title": [
         {
           "command": "frank.addNameOfUserSnippets",
           "when": "view == userSnippetsTreeview",
@@ -141,7 +141,7 @@
         {
           "id": "flowWebView",
           "name": "Frank!Flow",
-          "type": "webview" 
+          "type": "webview"
         }
       ],
       "frank": [
@@ -199,6 +199,7 @@
     "he": "^1.2.0",
     "jsdom": "^27.3.0",
     "saxon-js": "2.5",
+    "svg-pan-zoom": "^3.6.2",
     "xml-formatter": "^3.6.7"
   }
 }

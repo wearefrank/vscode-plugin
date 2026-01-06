@@ -15,10 +15,28 @@ html, body {
     display: flex;
     align-items: center;
     justify-content: center;
+    background-color: white;
 }
 
 #container svg {
     width: 100%;
     height: 100%;
     display: block;
+}
+
+#toolbar {
+    display: flex;
+    gap: 5px;
+    position: absolute;
+    top: 10px;
+    right: 10px;
+}
+
+#toolbar i {
+    color: #676a6c;
+}
+
+#toolbar i:hover {
+    cursor: pointer;
+    color: #fcd300;
 }
