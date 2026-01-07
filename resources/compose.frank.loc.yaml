@@ -21,7 +21,7 @@ services:
     build:
       context: .
       pull: true # makes sure that the base image is forcefully pulled when using 'latest' tag.
-    image: ${IMAGE_ID:-${IMAGE_TAG:-ghcr.io/wearefrank/25111427}}
+    image: ${IMAGE_ID:-${IMAGE_TAG:-ghcr.io/wearefrank/placeholder}}
     environment:
       dtap.stage: LOC
       configurations.directory.classLoaderType: ScanningDirectoryClassLoader
@@ -31,8 +31,8 @@ services:
     develop:
       watch:
         - action: sync+restart
-          path: ./src/main/configurations/25111427/DeploymentSpecifics.properties
-          target: /opt/frank/configurations/25111427/DeploymentSpecifics.properties
+          path: ./src/main/configurations/placeholder/DeploymentSpecifics.properties
+          target: /opt/frank/configurations/placeholder/DeploymentSpecifics.properties
         - action: sync
           path: ./src/main/configurations
           target: /opt/frank/configurations

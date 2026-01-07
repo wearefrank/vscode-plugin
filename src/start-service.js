@@ -7,22 +7,27 @@ class StartService {
         this.context = context;
     }
 
-    async createFile(workspaceRoot,  file) {
-        console.log(workspaceRoot);
+    async createFile(workspaceRoot, file) {
+        const newFilePath = path.join(workspaceRoot, file)
 
-        const targetPath = path.join(workspaceRoot, file)
+        const defaultFilePath = path.join(this.context.extensionPath, 'resources', file)
+        const newFile = fs.readFileSync(filePath, 'utf8');
 
-        const filePath = path.join(this.context.extensionPath, 'resources', file)
-        const content = fs.readFileSync(filePath, 'utf8');
+        if (file === "compose.frank.loc.yaml") {
+            const skeletonrcJSONPath = path.join(workspaceRoot, "skeletonrc.json");
+            const skeletonrcJSON = JSON.parse(fs.readFileSync(skeletonrcJSONPath, 'utf8'));
+
+            newFile = newFile.replace("placeholder", skeletonrcJSON.mappings["{{ cookiecutter.instance_name_lc }}"]);
+        }
         
-        fs.writeFileSync(targetPath, content, "utf8");
+        fs.writeFileSync(newFilePath, newFile, "utf8");
     }
 
     async getWorkingDirectory(file) {
         const editor = vscode.window.activeTextEditor;
 
         if (!editor) {
-            vscode.window.showErrorMessage("No active editor");
+            vscode.window.showErrorMessage("No active editor, open a file of the project you want to run in the editor.");
             return;
         }
 
