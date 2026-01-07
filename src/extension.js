@@ -193,7 +193,15 @@ function activate(context) {
 			return links;
 		}
 	});
-	
+
+	async function focusFrankFlow() {
+		await vscode.commands.executeCommand(
+			"workbench.view.extension.flowView"
+		);
+	}
+
+	focusFrankFlow();
+
 	function execAsync(command, cwd) {
 		return new Promise((resolve, reject) => {
 			exec(command, { cwd }, (error, stdout, stderr) => {
