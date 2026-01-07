@@ -182,13 +182,13 @@ function getErrorWebviewContent(error) {
         <style>
             body {
                 font-family: sans-serif;
-                color: #b00020;
-                padding: 1rem;
+                color: var(--vscode-errorForeground);
+                padding: 10px;
             }
             pre {
-                background: #ffecec;
-                border-left: 4px solid #b00020;
-                padding: 1rem;
+                background: var(--vscode-editorWidget-background);
+                border-left: 4px solid var(--vscode-errorForeground);
+                padding: 5px;
                 white-space: pre-wrap;
             }
         </style>
