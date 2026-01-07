@@ -6,13 +6,13 @@ body {
     display: flex;
     align-items: center;
     gap: 5px;
-    color: #676a6c;
+    color: var(--vscode-editor-foreground);
 }
 
 .snippetCategory {
     font-size: 20px;
     font-weight: bold;
-    color: #676a6c;
+    color: var(--vscode-editor-foreground);
     resize: none;
     border: none;
     background: none;
@@ -32,9 +32,9 @@ body {
     margin-bottom: 10px;
     padding: 10px;
     border-top: solid 3px #fcd300;
-    box-shadow: 4px 4px 2px #d8d8d8;
-    background-color: white;
-    color: #676a6c;
+    box-shadow: 4px 4px 2px var(--vscode-widget-shadow);
+    background-color: var(--vscode-editorWidget-background);
+    color: var(--vscode-editor-foreground);
     font-weight: bold;
 }
 
@@ -51,7 +51,7 @@ body {
     margin-left: 10px;
     cursor: pointer;
     font-size: 20px;
-    color: #676a6c;
+    color: var(--vscode-editor-foreground);
 }
 
 .details {
@@ -80,10 +80,17 @@ body {
     resize: none;
     margin-top: 5px;
     margin-bottom: 10px;
-    border: 1px solid #d8d8d8;
+    border: 1px solid var(--vscode-input-border);
     transition: border 0.2s;
     field-sizing: content;
-    color: #676a6c;
+    background-color: var(--vscode-input-background);
+    color: var(--vscode-editor-foreground);
+}
+
+.snippetPrefix::placeholder,
+.snippetDescription::placeholder,
+.snippetBody::placeholder {
+    color: var(--vscode-input-placeholderForeground);
 }
 
 .snippetPrefix:not([readonly]):focus,
@@ -91,7 +98,7 @@ body {
 .snippetBody:not([readonly]):focus {
     border-color: #fcd300;
     outline: none;
-    box-shadow: 0 0 5px #fcd300;
+    box-shadow: 0 0 10px #fcd300;
 }
 
 .newSnippetCard {
@@ -101,7 +108,7 @@ body {
 .snippetDivider {
     height: 1px;
     margin: 15px 0;
-    background-color: #d8d8d8;
+    background-color: var(--vscode-editor-foreground);
 }
 
 .header {
@@ -111,7 +118,7 @@ body {
 }
 
 .contributeButton {
-    color: #676a6c;
+    color: var(--vscode-editor-foreground);
     font-weight: bold;
     margin-left: auto;
     display: flex;
@@ -136,7 +143,7 @@ body {
     top: 10px;
     right: 5px;
     cursor: pointer;
-    color: #676a6c;
+    color: var(--vscode-editor-foreground);
 }
 
 i {

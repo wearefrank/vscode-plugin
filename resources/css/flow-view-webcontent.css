@@ -33,7 +33,7 @@ html, body {
 }
 
 #toolbar i {
-    color: #676a6c;
+    color: var(--vscode-editor-foreground);
 }
 
 #toolbar i:hover {
