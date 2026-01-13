@@ -77,7 +77,7 @@ class StartTreeItem extends vscode.TreeItem {
         this.projects = projects;
         this.method = method;
         this.projectTreeItems = [];
-        this.contextValue= "startTreeItem";
+        this.contextValue = `startTreeItem-${method}`;
 
         this.convertSnippetToSnippetTreeItems();
     }

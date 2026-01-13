@@ -62,12 +62,22 @@
         },
         {
           "command": "frank.startCurrent",
-          "when": "view == startTreeView && viewItem == startTreeItem",
-          "group": "inline"
+          "when": "view == startTreeView && (viewItem == startTreeItem-ant || viewItem == startTreeItem-docker || viewItem == startTreeItem-dockerCompose)",
+          "group": "inline@2"
         },
         {
           "command": "frank.startProject",
           "when": "view == startTreeView && viewItem == projectTreeItem",
+          "group": "inline@2"
+        },
+        {
+          "command": "frank.toggleUpdateOn",
+          "when": "view == startTreeView && viewItem == startTreeItem-ant && !frank.updateEnabled",
+          "group": "inline"
+        },
+        {
+          "command": "frank.toggleUpdateOff",
+          "when": "view == startTreeView && viewItem == startTreeItem-ant && frank.updateEnabled",
           "group": "inline"
         }
       ]
@@ -126,6 +136,16 @@
         "command": "frank.startProject",
         "title": "Run Project",
         "icon": "$(play)"
+      },
+      {
+        "command": "frank.toggleUpdateOn",
+        "title": "Enable Update",
+        "icon": "$(sync-ignored)"
+      },
+      {
+        "command": "frank.toggleUpdateOff",
+        "title": "Disable Update",
+        "icon": "$(sync)"
       }
     ],
     "viewsContainers": {

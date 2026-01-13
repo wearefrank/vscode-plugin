@@ -18,6 +18,7 @@ const { StartTreeProvider } = require("./start/start-tree-provider.js");
 
 let targets = null;
 let projectNameTrimmed = "skeleton";
+let updateEnabled = false;
 
 function activate(context) {
 	const userSnippetsService = new UserSnippetsService(context);
@@ -82,6 +83,14 @@ function activate(context) {
   			path.join(rootPath, projectName)
         );
 	});
+
+	function toggleUpdate() {
+		updateEnabled = !updateEnabled;
+
+		vscode.commands.executeCommand('setContext', 'frank.updateEnabled', updateEnabled);
+	}
+    vscode.commands.registerCommand('frank.toggleUpdateOn', toggleUpdate);
+    vscode.commands.registerCommand('frank.toggleUpdateOff', toggleUpdate);
 
 	function startHandler(item) {
 		switch (item.method) {
