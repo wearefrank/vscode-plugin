@@ -83,6 +83,9 @@ function activate(context) {
         );
 	});
 
+	if (context.globalState.get('frank.updateEnabled') === undefined) {
+		context.globalState.update('frank.updateEnabled', true);
+	}
 	vscode.commands.executeCommand('setContext', 'frank.updateEnabled', context.globalState.get('frank.updateEnabled'));
 	function toggleUpdate() {
 		context.globalState.update('frank.updateEnabled', !context.globalState.get('frank.updateEnabled'));

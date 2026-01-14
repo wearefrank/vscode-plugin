@@ -152,6 +152,55 @@ class StartService {
         fs.writeFileSync(ranProjectsPath, JSON.stringify(ranProjectJSON, null, 4), "utf8");
     }
 
+    isFrameworkFile(file) {
+        if (file.startsWith('frankframework-webapp')) {
+            return true;
+        }
+
+        if (file.startsWith('ibis-adapterframework-webapp')) {
+            return true;
+        }
+    }
+
+    updateOrNot(workingDir) {
+        if (this.context.globalState.get('frank.updateEnabled')){
+            if (fs.existsSync(path.join(workingDir, "frank-runner.properties"))) {
+                let frankRunnerProperties = fs.readFileSync(path.join(workingDir, "frank-runner.properties"), 'utf8');
+
+                frankRunnerProperties = frankRunnerProperties.replace(/ff\.version=.*/, "");
+
+                fs.writeFileSync(path.join(workingDir, "frank-runner.properties"), frankRunnerProperties, "utf8");
+            }
+        } else {
+            let  frankFrameworkFiles = [];
+
+            if (workingDir.includes('frank-runner\\examples')) {
+                frankFrameworkFiles = fs.readdirSync(path.join(workingDir, "../../download")).filter(this.isFrameworkFile);
+            } else {
+                frankFrameworkFiles = fs.readdirSync(path.join(workingDir, "../frank-runner/download")).filter(this.isFrameworkFile);
+            }
+
+            if (frankFrameworkFiles.lentgh > 0){
+                const ffVersion = frankFrameworkFiles[0].split("-")[2] + "-" + frankFrameworkFile[0].split("-")[3];
+            }
+
+            const match = frankFrameworkFiles[0].match(/(\d+(?:\.\d+)*-\d+\.\d+)\.war$/);
+            const ffVersion = match?.[1];
+
+            if (fs.existsSync(path.join(workingDir, "frank-runner.properties"))) {
+                const frankRunnerProperties = fs.readFileSync(path.join(workingDir, "frank-runner.properties"), 'utf8');
+
+                const ffVersionSet = frankRunnerProperties.search(/ff\.version=.*/);
+
+                if (ffVersionSet === -1) {
+                    fs.appendFileSync(path.join(workingDir, "frank-runner.properties"), "\nff.version=" + ffVersion, "utf8");
+                }
+            } else {
+                fs.writeFileSync(path.join(workingDir, "frank-runner.properties"), "ff.version=" + ffVersion, "utf8");
+            }
+        }
+    }
+
     async startWithAnt(workingDir) {
         if (workingDir == null) {
             const editor = vscode.window.activeTextEditor;
@@ -167,6 +216,8 @@ class StartService {
         if (!workingDir) {
             return;
         }
+
+        this.updateOrNot(workingDir);
         
         const term = vscode.window.createTerminal("Frank Ant");
 
@@ -174,7 +225,7 @@ class StartService {
 
         term.sendText(`cd "${workingDir}"`);
 
-        if (workingDir.includes('frank-runner\\examples')){
+        if (workingDir.includes('frank-runner\\examples')) {
             term.sendText(`../../ant.bat`);
         } else {
             term.sendText(`../frank-runner/ant.bat`);
