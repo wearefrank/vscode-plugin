@@ -2,7 +2,7 @@ const vscode = require("vscode");
 const fs = require('fs');
 const path = require('path');
 
-const { ProjectTreeItem } = require("./start/start-tree-provider.js");
+const { ProjectTreeItem } = require("./start-tree-provider.js");
 
 class StartService {
     constructor(context) {
@@ -51,8 +51,7 @@ class StartService {
     async getWorkingDirectory(file) {
         const editor = vscode.window.activeTextEditor;
 
-        if (!editor) {
-            vscode.window.showErrorMessage("No active editor, open a file of the project you want to run in the editor.");
+        if(!editor) {
             return;
         }
 

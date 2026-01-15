@@ -139,12 +139,12 @@
       },
       {
         "command": "frank.toggleUpdateOn",
-        "title": "Enable Update",
+        "title": "Use Highest Online Version",
         "icon": "$(sync-ignored)"
       },
       {
         "command": "frank.toggleUpdateOff",
-        "title": "Disable Update",
+        "title": "Use Highest Local Version (Download Disabled)",
         "icon": "$(sync)"
       }
     ],

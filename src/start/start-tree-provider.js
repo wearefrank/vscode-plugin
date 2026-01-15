@@ -12,14 +12,22 @@ class StartTreeProvider {
 
         this.startTreeItems = [];
 
-        this.rebuild();
+        vscode.window.onDidChangeActiveTextEditor(async () => {
+            await this.rebuild();
+            this.refresh();
+        });
+
+        (async () => {
+            await this.rebuild();
+            this.refresh();
+        })();
     }
 
     refresh() {
         this._onDidChangeTreeData.fire(null);
     }
 
-    rebuild() {
+    async rebuild() {
         this.startService.ensureRanProjectsFileExists();
 
         const ranProjectsPath = path.join(this.context.globalStorageUri.fsPath, 'ranProjects.json');
@@ -51,7 +59,12 @@ class StartTreeProvider {
             }
         }
 
-        const antTreeItem = new StartTreeItem("Start with Ant", existingProjectsAnt, "ant", vscode.TreeItemCollapsibleState.Expanded);
+        let project = await this.startService.getWorkingDirectory("build.xml");
+        if (project != undefined) {
+            project = path.basename(project);
+        }
+
+        const antTreeItem = new StartTreeItem(`Start with Ant (${project})`, existingProjectsAnt, "ant", vscode.TreeItemCollapsibleState.Expanded);
         const dockerTreeItem = new StartTreeItem("Start with Docker", existingProjectsDocker, "docker", vscode.TreeItemCollapsibleState.Expanded);
         const dockerComposeTreeItem = new StartTreeItem("Start with Docker Compose", existingProjectsDockerCompose, "dockerCompose", vscode.TreeItemCollapsibleState.Expanded);
 

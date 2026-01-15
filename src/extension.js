@@ -4,7 +4,7 @@ const path = require('path');
 const { exec } = require('child_process');
 const SaxonJS = require('saxon-js');
 
-const StartService = require("./start-service.js");
+const StartService = require("./start/start-service.js");
 const UserSnippetsService = require("./snippets/usersnippets-service.js");
 const { showSnippetsView } = require('./snippets/usersnippets-view.js');
 const FrankFlowViewProvider = require('./flow/flow-view-provider.js');
