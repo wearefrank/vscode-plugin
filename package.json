@@ -15,6 +15,105 @@
   ],
   "main": "./src/extension.js",
   "contributes": {
+    "walkthroughs": [
+      {
+        "id": "introduction",
+        "title": "Get Started with Frank!Framework",
+        "description": "This walkthrough shows you how the Frank!Framework extension helps you create, configure, run, and understand Frank projects.",
+        "steps": [
+          {
+            "id": "newProject",
+            "title": "Open or Create a Frank Project",
+            "description": "In the Activity Bar, open the Frank!Framework Welcome view. From here you can either open an existing Frank project or create a new one. Creating a new project clones the Frank!Runner and a skeleton project into your workspace. You will be asked to give the new project a name.",
+            "media": {
+              "image": "resources/images/image.png",
+              "altText": "Frank!Framework Welcome View"
+            }
+          },
+          {
+            "id": "start",
+            "title": "Run Your Project",
+            "description": "Run your project using Ant, Docker, or Docker Compose from the Start! view in the Explorer. At the top you'll see the current project, choose your start method and hover over it to reveal the button to run it.",
+            "media": {
+              "image": "resources/images/start.png",
+              "altText": "Run a Frank Project"
+            }
+          },
+          {
+            "id": "start1",
+            "title": "Run Previous Projects Again",
+            "description": "Previously run projects are saved so you can easily start them again from the Start! view.",
+            "media": {
+              "image": "resources/images/start1.png",
+              "altText": "Previously Run Projects"
+            }
+          },
+          {
+            "id": "frankFlow",
+            "title": "Visualize Your Configuration",
+            "description": "When working with a Frank configuration file, the Frank!Flow is shown in the Secondary Sidebar. It visualizes how your configuration works and updates automatically when you save changes or switch between configuration files.",
+            "media": {
+              "image": "resources/images/frankFlow.png",
+              "altText": "Frank!Flow Visualization"
+            }
+          },
+          {
+            "id": "newAdapter",
+            "title": "Add an Adapter to Your Configuration",
+            "description": "In the Explorer, open the Adapters! view and click “Add Adapter”. Choose an adapter type from the list and it will be inserted into the file currently open in your editor.",
+            "media": {
+              "image": "resources/images/newadapter.png",
+              "altText": "Create a New Adapter"
+            }
+          },
+          {
+            "id": "snippets",
+            "title": "Use Built-in Snippets",
+            "description": "Snippets are automatically loaded from the Frank!Framework Wiki. Each component has at least one snippet, and some have multiple. Start typing the component name to see available snippets and insert them into your configuration.",
+            "media": {
+              "image": "resources/images/snippet.png",
+              "altText": "Frank Snippets"
+            }
+          },
+          {
+            "id": "createUserSnippet",
+            "title": "Create a Custom Snippet",
+            "description": "Select text in the editor, right-click, and choose “Add Frank! Snippet”. Enter a name to save the selected text as your own snippet.",
+            "media": {
+              "image": "resources/images/createsnippet.png",
+              "altText": "Create a Frank snippet from selected text"
+            }
+          },
+          {
+            "id": "viewUserSnippets",
+            "title": "View Your Snippets",
+            "description": "Your custom snippets appear in the Frank! Snippets view in the Explorer. Snippets are grouped by name, and each group can contain multiple snippets.",
+            "media": {
+              "image": "resources/images/viewsnippets.png",
+              "altText": "Frank Snippets view in the Explorer"
+            }
+          },
+          {
+            "id": "manageUserSnippets",
+            "title": "Manage and Edit Snippets",
+            "description": "Click a snippet or snippet group to open the management view. Here you can rename collections, edit snippet prefixes, descriptions, and content, add new snippets, or delete existing ones. If you want to share a snippet with others, use the button in the top right to submit it to the Frank!Framework Wiki.",
+            "media": {
+              "image": "resources/images/managesnippets.png",
+              "altText": "Manage Frank snippets in the webview"
+            }
+          },
+          {
+            "id": "documentation",
+            "title": "Open Component Documentation",
+            "description": "Components with available documentation are underlined in the editor. Hold Ctrl (or Cmd on macOS) and click the component name to open its Frank!Doc page in your browser.",
+            "media": {
+              "image": "resources/images/documentation.png",
+              "altText": "Component Documentation Link"
+            }
+          }
+        ]
+      }
+    ],
     "menus": {
       "commandPalette": [
         {
@@ -101,7 +200,7 @@
       },
       {
         "command": "frank.addNewUserSnippet",
-        "title": "Add a New Frank! Snippet"
+        "title": "Add Frank! Snippet"
       },
       {
         "command": "frank.addNewAdapter",
@@ -153,14 +252,14 @@
         {
           "id": "frankFlowViewContainer",
           "title": "Frank!Flow",
-          "icon": "resources/wearefrank_logo.svg"
+          "icon": "resources/images/wearefrank_logo.svg"
         }
       ],
       "activitybar": [
         {
           "id": "welcomeViewContainer",
           "title": "Frank!Framework",
-          "icon": "resources/wearefrank_logo.svg"
+          "icon": "resources/images/wearefrank_logo.svg"
         }
       ]
     },
@@ -200,7 +299,7 @@
       },
       {
         "view": "adapterView",
-        "contents": "[Create an Adapter](command:frank.addNewAdapter)"
+        "contents": "[Add Adapter](command:frank.addNewAdapter)"
       }
     ]
   },
