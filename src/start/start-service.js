@@ -50,55 +50,70 @@ class StartService {
 
     async getWorkingDirectory(file) {
         const editor = vscode.window.activeTextEditor;
-
         if(!editor) {
             return;
         }
 
-        const workspaceFolder = vscode.workspace.getWorkspaceFolder(
-            editor.document.uri
-        );
-
+        const workspaceFolder = vscode.workspace.getWorkspaceFolder(editor.document.uri);
+        if (!workspaceFolder) {
+            return undefined;
+        }
         const workspaceRoot = workspaceFolder.uri.fsPath;
 
         let currentDir = path.dirname(editor.document.uri.fsPath);
         let lastDir = currentDir;
 
-        while (true) {
-            let matches = await vscode.workspace.findFiles(
-                new vscode.RelativePattern(currentDir, file),
-                null,
-                1
-            );
+        const isComposeFile = (filename) =>
+            filename.toLowerCase().includes("compose") &&
+            (filename.endsWith(".yml") || filename.endsWith(".yaml"));
 
-            if (matches.length > 0) {
-                return currentDir;
+        while (true) {
+            if (file) {
+                const matches = await vscode.workspace.findFiles(
+                    new vscode.RelativePattern(currentDir, file),
+                    null,
+                    1
+                );
+
+                if (matches.length > 0) {
+                    return currentDir;
+                }
+            } else {
+                if (fs.existsSync(path.join(currentDir, "build.xml"))) {
+                    return currentDir;
+                }
+
+                if (fs.existsSync(path.join(currentDir, "Dockerfile"))) {
+                    return currentDir;
+                }
+
+                const files = fs.readdirSync(currentDir);
+                if (files.some(isComposeFile)) {
+                    return currentDir;
+                }
             }
 
-            let parentDir = path.dirname(currentDir);
-
             if (currentDir === workspaceRoot) {
+                if (!file) {
+                    return undefined;
+                }
+
                  const choice = await vscode.window.showInformationMessage(
-                    'File doesn\'t exist in the current project, create new file?',
+                    `${file} doesn\'t exist in the current project. Create it?`,
                     'Yes',
                     'Cancel'
                 );
                 
                 if (choice === 'Yes') {
-                    try {
-                        const createdFile = await this.createFile(lastDir, file);
-
-                        if (createdFile) {
-                            return lastDir;
-                        } else {
-                            return null;
-                        }
-                    } catch (err) {
-                        return null;
-                    }
+                    const createdFile = await this.createFile(lastDir, file);
+                    return createdFile ? lastDir: null;
                 } else {
                     return null;
                 }
+            }
+            const parentDir = path.dirname(currentDir);
+            if (parentDir === currentDir) {
+                return undefined;
             }
 
             lastDir = currentDir;

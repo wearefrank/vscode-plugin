@@ -168,9 +168,22 @@ function activate(context) {
 	}
 	focusFrankFlowView();
 
-	vscode.window.createTreeView("startTreeView", {
+	const startTreeView = vscode.window.createTreeView("startTreeView", {
 		treeDataProvider: startTreeProvider
 	});
+	setStartTreeViewDescription();
+	vscode.window.onDidChangeActiveTextEditor(() => {
+		setStartTreeViewDescription();
+	});
+	async function setStartTreeViewDescription() {
+		const projectName = path.basename(await startService.getWorkingDirectory());
+		console.log(projectName);
+		if (projectName != undefined) {
+			startTreeView.description = path.basename(await startService.getWorkingDirectory());
+		} else {
+			startTreeView.description = "No Runable File Found";
+		}
+	}
 
 	//Init user snippets tree view
 	vscode.window.createTreeView("userSnippetsTreeview", {
