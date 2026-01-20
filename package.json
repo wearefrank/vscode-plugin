@@ -49,6 +49,15 @@
             }
           },
           {
+            "id": "start2",
+            "title": "Run with Ant and Toggle FF! Update",
+            "description": "When running a project with Ant, you can choose which version of FF! the Frank!Runner uses: either the highest version available online or the highest version installed locally. Right-click on a project in the Start! view to toggle.",
+            "media": {
+              "image": "resources/images/toggle.png",
+              "altText": "Toggle FF! Update"
+            }
+          },
+          {
             "id": "flow",
             "title": "Visualize Your Configuration",
             "description": "When working with a Frank configuration file, the flowchart is shown in the Secondary Sidebar. It visualizes how your configuration works and updates automatically when you save changes or switch between configuration files.",
