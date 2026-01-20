@@ -49,12 +49,12 @@
             }
           },
           {
-            "id": "frankFlow",
+            "id": "flow",
             "title": "Visualize Your Configuration",
-            "description": "When working with a Frank configuration file, the Frank!Flow is shown in the Secondary Sidebar. It visualizes how your configuration works and updates automatically when you save changes or switch between configuration files.",
+            "description": "When working with a Frank configuration file, the flowchart is shown in the Secondary Sidebar. It visualizes how your configuration works and updates automatically when you save changes or switch between configuration files.",
             "media": {
-              "image": "resources/images/frankFlow.png",
-              "altText": "Frank!Flow Visualization"
+              "image": "resources/images/flow.png",
+              "altText": "Flowchart Visualization"
             }
           },
           {
@@ -166,7 +166,7 @@
         },
         {
           "command": "frank.startProject",
-          "when": "view == startTreeView && viewItem == projectTreeItem",
+          "when": "view == startTreeView && (viewItem == projectTreeItem-ant || viewItem == projectTreeItem-docker || viewItem == projectTreeItem-dockerCompose)",
           "group": "inline@2"
         },
         {
@@ -240,8 +240,8 @@
     "viewsContainers": {
       "secondarySidebar": [
         {
-          "id": "frankFlowViewContainer",
-          "title": "Frank!Flow",
+          "id": "flowViewContainer",
+          "title": "Flow",
           "icon": "resources/images/wearefrank_logo.svg"
         }
       ],
@@ -254,10 +254,10 @@
       ]
     },
     "views": {
-      "frankFlowViewContainer": [
+      "flowViewContainer": [
         {
-          "id": "frankFlowView",
-          "name": "Frank!Flow",
+          "id": "flowView",
+          "name": "Flow",
           "type": "webview"
         }
       ],

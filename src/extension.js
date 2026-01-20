@@ -7,7 +7,7 @@ const SaxonJS = require('saxon-js');
 const StartService = require("./start/start-service.js");
 const UserSnippetsService = require("./snippets/usersnippets-service.js");
 const { showSnippetsView } = require('./snippets/usersnippets-view.js');
-const FrankFlowViewProvider = require('./flow/flow-view-provider.js');
+const FlowViewProvider = require('./flow/flow-view-provider.js');
 const { UserSnippetsTreeProvider } = require("./snippets/usersnippets-tree-provider.js");
 const { UserSnippetsDndController } = require("./snippets/usersnippets-dnd-controller.js")
 const { StartTreeProvider } = require("./start/start-tree-provider.js");
@@ -99,8 +99,18 @@ function activate(context) {
 		startTreeProvider.rebuild();
         startTreeProvider.refresh();
 	};
-	vscode.commands.registerCommand("frank.startCurrent", async function (item) { startHandler(item) });
-	vscode.commands.registerCommand("frank.startProject", async function (item) { startHandler(item) });
+	vscode.commands.registerCommand("frank.startCurrent", async function (item) { 
+		startHandler(item);
+		
+		startTreeProvider.rebuild();
+        startTreeProvider.refresh();
+	});
+	vscode.commands.registerCommand("frank.startProject", async function (item) { 
+		startHandler(item);
+
+		startTreeProvider.rebuild();
+        startTreeProvider.refresh();
+	});
 	vscode.commands.registerCommand('frank.startAnt', async function () {
 		startService.startWithAnt();
 
@@ -134,27 +144,27 @@ function activate(context) {
 	userSnippetsService.ensureSnippetsFilesExists();
 	userSnippetsService.loadFrankFrameworkSnippets();
 
-	//Init Frank!Flow view
-	const frankFlowViewProvider = new FrankFlowViewProvider(context);
+	//Init flowchart view
+	const flowViewProvider = new FlowViewProvider(context);
 	context.subscriptions.push(
-		vscode.window.registerWebviewViewProvider('frankFlowView', frankFlowViewProvider)
+		vscode.window.registerWebviewViewProvider('flowView', flowViewProvider)
 	);
 	vscode.window.onDidChangeActiveTextEditor((editor) => {
 		if (editor && editor.document.languageId === "xml") {
-			frankFlowViewProvider.updateWebview();
+			flowViewProvider.updateWebview();
 		}
 	});
 	vscode.workspace.onDidSaveTextDocument((document) => {
 		if (document.languageId === "xml") {
-			frankFlowViewProvider.updateWebview();
+			flowViewProvider.updateWebview();
 		}
 	});
-	async function focusFrankFlowView() {
+	async function focusFlowView() {
 		await vscode.commands.executeCommand(
-			"workbench.view.extension.frankFlowViewContainer"
+			"workbench.view.extension.flowViewContainer"
 		);
 	}
-	focusFrankFlowView();
+	focusFlowView();
 
 	const startTreeView = vscode.window.createTreeView("startTreeView", {
 		treeDataProvider: startTreeProvider

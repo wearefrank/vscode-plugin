@@ -5,7 +5,7 @@ const SaxonJS = require('saxon-js');
 const frankLayout = require("@frankframework/frank-config-layout");
 const { JSDOM } = require("jsdom")
 
-class FrankFlowViewProvider {
+class FlowViewProvider {
     constructor(context) {
       this.context = context;
     }
@@ -112,7 +112,7 @@ class FrankFlowViewProvider {
 
         this.webView.webview.html = getWebviewContent(svg, css, codiconCss, script, zoomScript);
       } catch (err) {
-        this.webView.webview.html = getErrorWebviewContent("This XML cannot be converted to a Frank!Flow");
+        this.webView.webview.html = getErrorWebviewContent("This XML cannot be converted to a Flowchart");
       }
     }
 }
@@ -151,7 +151,7 @@ function getWebviewContent(svg, css, codiconCss, script, zoomScript) {
   <html>
       <head>
         <meta charset="UTF-8">
-        <title>Frank!Flow</title>
+        <title>Flowchart</title>
         <link rel="stylesheet" href="${css}">
         <link rel="stylesheet" href="${codiconCss}" >
       </head>
@@ -178,7 +178,7 @@ function getErrorWebviewContent(error) {
     <html>
     <head>
         <meta charset="UTF-8">
-        <title>Frank!Flow – Error</title>
+        <title>Flowchart – Error</title>
         <style>
             body {
                 font-family: sans-serif;
@@ -202,4 +202,4 @@ function getErrorWebviewContent(error) {
     `;
 }
 
-module.exports = FrankFlowViewProvider;
+module.exports = FlowViewProvider;
