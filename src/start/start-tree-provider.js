@@ -11,7 +11,7 @@ class StartTreeProvider {
         this.onDidChangeTreeData = this._onDidChangeTreeData.event;
 
         vscode.window.onDidChangeActiveTextEditor(async () => {
-            await this.rebuild();
+            this.rebuild();
             this.refresh();
         });
   
@@ -66,12 +66,18 @@ class StartTreeProvider {
         return snippet;
     }
 
-    getChildren(snippet) {
-        if (snippet) {
-            return snippet.getProjectTreeItems();
-        } else {
+    getChildren(element) {
+        if (!element) {
             return this.startTreeItems;
         }
+
+        if (element instanceof StartTreeItem) {
+            return element.projects.map(
+                p => new ProjectTreeItem(p.project, p.path, element.method)
+            );
+        }
+
+        return [];
     }
 }
 
@@ -80,28 +86,8 @@ class StartTreeItem extends vscode.TreeItem {
         super(label, collapsibleState);
         this.projects = projects;
         this.method = method;
-        this.projectTreeItems = [];
         this.contextValue = `startTreeItem`;
 
-        this.convertProjectToProjectTreeItems();
-    }
-
-    convertProjectToProjectTreeItems() {
-        const arr = [];
-
-        this.projects.forEach((project) => {
-            arr.push(new ProjectTreeItem(project.project, project.path, this.method));
-        });
-
-        this.projectTreeItems = arr;
-    }
-
-    getProjectTreeItems() {
-        return this.projectTreeItems;
-    }
-
-    setProjectTreeItems(projectTreeItems) {
-        this.projectTreeItems = projectTreeItems;
     }
 }
 

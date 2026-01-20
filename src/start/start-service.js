@@ -121,6 +121,29 @@ class StartService {
         }
     }
 
+    async deleteRanProject(method, workingDir) {
+        const ranProjectsPath = path.join(this.context.globalStorageUri.fsPath, 'ranProjects.json');
+        const ranProjectsFile = await fs.readFileSync(ranProjectsPath, 'utf8');
+        let ranProjectsJSON = JSON.parse(ranProjectsFile);
+
+        const editor = vscode.window.activeTextEditor;
+        if (!editor) {
+            vscode.window.showErrorMessage("No active editor");
+            return;
+        }
+
+        const workspaceFolder = vscode.workspace.getWorkspaceFolder(editor.document.uri);
+        if (!workspaceFolder) return;
+
+        const workspaceRootBasename = workspaceFolder.uri.fsPath;
+
+        ranProjectsJSON[workspaceRootBasename][0][method] = ranProjectsJSON[workspaceRootBasename][0][method].filter(
+            project => project.path !== workingDir
+        );
+
+        fs.writeFileSync(ranProjectsPath, JSON.stringify(ranProjectsJSON, null, 4), "utf8");
+    }
+
     async saveRanProject(method, workingDir) {
         const ranProjectsPath = path.join(this.context.globalStorageUri.fsPath, 'ranProjects.json');
 

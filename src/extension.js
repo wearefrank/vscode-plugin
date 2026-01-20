@@ -83,22 +83,28 @@ function activate(context) {
         );
 	});
 
-	function startHandler(item) {
+	async function startHandler(item) {
 		switch (item.method) {
 			case "ant":
-				startService.startWithAnt(item.path);
+				await startService.startWithAnt(item.path);
 				break;
 			case "docker":
-				startService.startWithDocker(item.path);
+				await startService.startWithDocker(item.path);
 				break;
 			case "dockerCompose":
-				startService.startWithDockerCompose(item.path);
+				await startService.startWithDockerCompose(item.path);
 				break;
 		}
 
 		startTreeProvider.rebuild();
         startTreeProvider.refresh();
 	};
+	vscode.commands.registerCommand("frank.deleteProject", async function (item) { 
+		await startService.deleteRanProject(item.method, item.path);
+		
+		startTreeProvider.rebuild();
+        startTreeProvider.refresh();
+	});
 	vscode.commands.registerCommand("frank.startCurrent", async function (item) { 
 		startHandler(item);
 		
