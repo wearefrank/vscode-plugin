@@ -72,16 +72,6 @@ class SnippetsService {
         }
     }
 
-    setFrameworkSnippets(frameworkSnippets) {
-        const frameworkSnippetsStoragePath =  this.getFrameworkSnippetsPath();
-
-        try {
-            fs.writeFileSync(frameworkSnippetsStoragePath, JSON.stringify(frameworkSnippets, null, 4), 'utf8');
-        } catch (err) {
-            console.log(err);
-        }
-    }
-
     async addNewUserSnippet(userSnippetsTreeProvider) {
         const editor = vscode.window.activeTextEditor;
     
@@ -352,7 +342,6 @@ class SnippetsService {
         const targetDir = path.join(storagePath, "frankframework.wiki");
 
         fs.rmSync(targetDir, { recursive: true, force: true });
-        fs.rmSync(targetDira, { recursive: true, force: true });
 
         exec(`git clone "${repoUrl}" "${targetDir}"`, { cwd: storagePath }, (err) => {
             if (err) {

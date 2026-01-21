@@ -9,7 +9,7 @@ const SnippetsService = require("./snippets/snippets-service.js");
 const { showSnippetsView } = require('./snippets/usersnippets-view.js');
 const FlowViewProvider = require('./flow/flow-view-provider.js');
 const { SnippetsTreeProvider } = require("./snippets/snippets-tree-provider.js");
-const { UserSnippetsDndController } = require("./snippets/usersnippets-dnd-controller.js")
+const { SnippetsDndController } = require("./snippets/snippets-dnd-controller.js")
 const { StartTreeProvider } = require("./start/start-tree-provider.js");
 
 /**
@@ -21,8 +21,8 @@ let projectNameTrimmed = "skeleton";
 
 function activate(context) {
 	const snippetsService = new SnippetsService(context);
-	const snippetsTreeProvider = new SnippetsTreeProvider(context, snippetsService);
-	const userSnippetsDndController = new UserSnippetsDndController(context, SnippetsTreeProvider, snippetsService);
+	const snippetsTreeProvider = new SnippetsTreeProvider(snippetsService);
+	const snippetsDndController = new SnippetsDndController(context, snippetsTreeProvider, snippetsService);
 	const startService = new StartService(context);
 	const startTreeProvider = new StartTreeProvider(context, startService);
 
@@ -83,6 +83,7 @@ function activate(context) {
         );
 	});
 
+	//Helper function for starting a project.
 	async function startHandler(item) {
 		switch (item.method) {
 			case "ant":
@@ -99,12 +100,7 @@ function activate(context) {
 		startTreeProvider.rebuild();
         startTreeProvider.refresh();
 	};
-	vscode.commands.registerCommand("frank.deleteProject", async function (item) { 
-		await startService.deleteRanProject(item.method, item.path);
-		
-		startTreeProvider.rebuild();
-        startTreeProvider.refresh();
-	});
+
 	vscode.commands.registerCommand("frank.startCurrent", async function (item) { 
 		startHandler(item);
 		
@@ -136,46 +132,15 @@ function activate(context) {
         startTreeProvider.refresh();
 	});
 
-	vscode.commands.registerCommand('frank.addNewAdapter', async function () {
-		const adapter = await vscode.window.showQuickPick(
-			["Adapter 1", "Adapter 2", "Adapter 3", "Adapter 4"]
-		);
-		const editor = vscode.window.activeTextEditor;
-		if (!editor) {
-			vscode.window.showErrorMessage("No active editor");
-		} else {
-			await editor.edit(editBuilder => {
-        		editBuilder.insert(editor.selection.active, adapter);
-    		});
-		}
-	})
-
-	//Load examples from the Frank!Framework Wiki as VS Code Snippets.
-	snippetsService.ensureSnippetsFilesExists();
-	snippetsService.loadFrankFrameworkSnippets();
-
-	//Init flowchart view
-	const flowViewProvider = new FlowViewProvider(context);
-	context.subscriptions.push(
-		vscode.window.registerWebviewViewProvider('flowView', flowViewProvider)
-	);
-	vscode.window.onDidChangeActiveTextEditor((editor) => {
-		if (editor && editor.document.languageId === "xml") {
-			flowViewProvider.updateWebview();
-		}
+	//Deletes project from ran projects list in Frank!Start view.
+	vscode.commands.registerCommand("frank.deleteProject", async function (item) { 
+		await startService.deleteRanProject(item.method, item.path);
+		
+		startTreeProvider.rebuild();
+        startTreeProvider.refresh();
 	});
-	vscode.workspace.onDidSaveTextDocument((document) => {
-		if (document.languageId === "xml") {
-			flowViewProvider.updateWebview();
-		}
-	});
-	async function focusFlowView() {
-		await vscode.commands.executeCommand(
-			"workbench.view.extension.flowViewContainer"
-		);
-	}
-	focusFlowView();
 
+	//Init start view.
 	const startTreeView = vscode.window.createTreeView("startTreeView", {
 		treeDataProvider: startTreeProvider
 	});
@@ -204,10 +169,50 @@ function activate(context) {
     	startTreeProvider.refresh();
 	});
 
-	//Init user snippets tree view
+	vscode.commands.registerCommand('frank.addNewAdapter', async function () {
+		const adapter = await vscode.window.showQuickPick(
+			["Adapter 1", "Adapter 2", "Adapter 3", "Adapter 4"]
+		);
+		const editor = vscode.window.activeTextEditor;
+		if (!editor) {
+			vscode.window.showErrorMessage("No active editor");
+		} else {
+			await editor.edit(editBuilder => {
+        		editBuilder.insert(editor.selection.active, adapter);
+    		});
+		}
+	})
+
+	//Load examples from the Frank!Framework Wiki as VS Code Snippets.
+	snippetsService.ensureSnippetsFilesExists();
+	snippetsService.loadFrankFrameworkSnippets();
+
+	//Init flowchart view.
+	const flowViewProvider = new FlowViewProvider(context);
+	context.subscriptions.push(
+		vscode.window.registerWebviewViewProvider('flowView', flowViewProvider)
+	);
+	vscode.window.onDidChangeActiveTextEditor((editor) => {
+		if (editor && editor.document.languageId === "xml") {
+			flowViewProvider.updateWebview();
+		}
+	});
+	vscode.workspace.onDidSaveTextDocument((document) => {
+		if (document.languageId === "xml") {
+			flowViewProvider.updateWebview();
+		}
+	});
+	async function focusFlowView() {
+		await vscode.commands.executeCommand(
+			"workbench.view.extension.flowViewContainer"
+		);
+	}
+	focusFlowView();
+
+	//Init snippets tree view.
 	vscode.window.createTreeView("snippetsTreeView", {
 		treeDataProvider: snippetsTreeProvider,
-		dragAndDropController: userSnippetsDndController
+		dragAndDropController: snippetsDndController
 	});
 	vscode.commands.registerCommand('frank.addNewCategoryOfUserSnippets', () => {
 		snippetsService.addNewCategoryOfUserSnippets(snippetsTreeProvider);

@@ -1,9 +1,10 @@
 const vscode = require("vscode");
 
 class SnippetsTreeProvider {
-  constructor(context, userSnippetsService) {
+  constructor(userSnippetsService) {
     this._onDidChangeTreeData = new vscode.EventEmitter();
     this.onDidChangeTreeData = this._onDidChangeTreeData.event;
+
     this.userSnippetsService = userSnippetsService;
     this.userSnippetsTreeItems = [];
     this.rootTreeItem = null;
@@ -24,14 +25,15 @@ class SnippetsTreeProvider {
 
     for (const category in userSnippets) {
       userCategories.push(
-        this.convertUserSnippetsToCategoryTreeItems(category, "user", userSnippets[category])
+        this.convertUserSnippetToCategoryTreeItem(category, "user", userSnippets[category])
       );
     }
 
     for (const category in frameworkSnippets) {
       if (frameworkSnippets[category].length <= 0) continue;
+
       frameworkCategories.push(
-        this.convertFrameworkSnippetsToCategoryTreeItems(category, "framework", frameworkSnippets[category])
+        this.convertFrameworkSnippetToCategoryTreeItem(category, "framework", frameworkSnippets[category])
       );
     }
 
@@ -41,31 +43,31 @@ class SnippetsTreeProvider {
     ];
   }
 
-  getTreeItem(snippet) {
-    return snippet;
+  getTreeItem(treeItem) {
+    return treeItem;
   }
 
-  getChildren(element) {
-    if (!element) {
+  getChildren(treeItem) {
+    if (!treeItem) {
       return this.rootTreeItems;
     }
 
-    if (element instanceof RootTreeItem) {
-      return element.getCategoryTreeItems();
+    if (treeItem instanceof RootTreeItem) {
+      return treeItem.getCategoryTreeItems();
     }
 
-    if (element instanceof CategoryTreeItem) {
-      return element.getSnippetTreeItems();
+    if (treeItem instanceof CategoryTreeItem) {
+      return treeItem.getSnippetTreeItems();
     }
 
     return [];
   }
 
-  convertUserSnippetsToCategoryTreeItems(category, root, userSnippetsPerCategory) {
+  convertUserSnippetToCategoryTreeItem(category, root, userSnippetsPerCategory) {
     return new CategoryTreeItem(category, root, userSnippetsPerCategory, vscode.TreeItemCollapsibleState.Expanded);
   }
 
-  convertFrameworkSnippetsToCategoryTreeItems(category, root, snippets) {
+  convertFrameworkSnippetToCategoryTreeItem(category, root, snippets) {
     return new CategoryTreeItem(category, root, snippets, vscode.TreeItemCollapsibleState.Collapsed);
   }
 
@@ -87,7 +89,6 @@ class RootTreeItem {
 class CategoryTreeItem extends vscode.TreeItem {
   constructor(category, root, userSnippetsPerCategory, collapsibleState) {
     super(category, collapsibleState);
-
     this.userSnippetsPerCategory = userSnippetsPerCategory;
     this.snippetTreeItems = [];
     this.root = root;
@@ -101,10 +102,10 @@ class CategoryTreeItem extends vscode.TreeItem {
       };
     }
     
-    this.convertSnippetToSnippetTreeItems();
+    this.convertSnippetsToSnippetTreeItems();
   }
 
-  convertSnippetToSnippetTreeItems() {
+  convertSnippetsToSnippetTreeItems() {
     const arr = [];
 
     this.userSnippetsPerCategory.forEach((snippet, index) => {
@@ -129,7 +130,6 @@ class SnippetTreeItem extends vscode.TreeItem {
     this.root = root;
     this.body = body;
     this.contextValue = `snippetTreeItem-${root}`;
-
     this.tooltip = body;
     this.description = String(index);
 
