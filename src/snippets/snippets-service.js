@@ -5,7 +5,7 @@ const { exec } = require("child_process");
 const he = require('he');
 const format = require('xml-formatter');
 
-class UserSnippetsService {
+class SnippetsService {
     constructor(context) {
         this.context = context;
     }
@@ -14,10 +14,14 @@ class UserSnippetsService {
         return path.join(this.context.globalStorageUri.fsPath,'../../snippets/usersnippets.code-snippets');
     }
 
+    getFrameworkSnippetsPath() {
+        return path.join(this.context.globalStorageUri.fsPath,'../../snippets/frankframework.code-snippets');
+    }
+
     ensureSnippetsFilesExists() {
         const storagePaths = [];
         storagePaths.push(this.getUserSnippetsPath());
-        storagePaths.push(path.join(this.context.globalStorageUri.fsPath,'../../snippets/frankframework.code-snippets'));
+        storagePaths.push(this.getFrameworkSnippetsPath());
 
         storagePaths.forEach(storagePath => {
             const dir = path.dirname(storagePath);
@@ -33,7 +37,7 @@ class UserSnippetsService {
     }
 
     getUserSnippets() {
-        const userSnippetsStoragePath =  this.getUserSnippetsPath()
+        const userSnippetsStoragePath =  this.getUserSnippetsPath();
 
         try {
             const userSnippets = JSON.parse(fs.readFileSync(userSnippetsStoragePath, 'utf8'));
@@ -46,10 +50,33 @@ class UserSnippetsService {
     }
 
     setUserSnippets(userSnippets) {
-        const userSnippetsStoragePath =  this.getUserSnippetsPath()
+        const userSnippetsStoragePath =  this.getUserSnippetsPath();
 
         try {
             fs.writeFileSync(userSnippetsStoragePath, JSON.stringify(userSnippets, null, 4), 'utf8');
+        } catch (err) {
+            console.log(err);
+        }
+    }
+
+    getFrameworkSnippets() {
+        const frameworkSnippetsStoragePath = this.getFrameworkSnippetsPath();
+
+        try {
+            const frameworkSnippets = JSON.parse(fs.readFileSync(frameworkSnippetsStoragePath, 'utf8'));
+
+            return frameworkSnippets;
+        } catch (err) {
+            console.error(err);
+            return {};
+        }
+    }
+
+    setFrameworkSnippets(frameworkSnippets) {
+        const frameworkSnippetsStoragePath =  this.getFrameworkSnippetsPath();
+
+        try {
+            fs.writeFileSync(frameworkSnippetsStoragePath, JSON.stringify(frameworkSnippets, null, 4), 'utf8');
         } catch (err) {
             console.log(err);
         }
@@ -180,7 +207,7 @@ class UserSnippetsService {
 
     async uploadUserSnippet(category) {    
         const storagePath = this.context.globalStorageUri.fsPath;
-        const targetDir = path.join(storagePath, "test");
+        const targetDir = path.join(storagePath, "frankframework.wiki");
         const targetPath = path.join(targetDir, `${category}.md`)
 
         try {
@@ -324,10 +351,6 @@ class UserSnippetsService {
         const repoUrl = "https://github.com/frankframework/frankframework.wiki.git";
         const targetDir = path.join(storagePath, "frankframework.wiki");
 
-        const repoUrla = "https://github.com/FrancesTwisk/test.wiki.git";
-        const targetDira = path.join(storagePath, "test");
-
-
         fs.rmSync(targetDir, { recursive: true, force: true });
         fs.rmSync(targetDira, { recursive: true, force: true });
 
@@ -338,13 +361,7 @@ class UserSnippetsService {
 
             this.extractSnippets(targetDir);
         });
-
-        exec(`git clone "${repoUrla}" "${targetDira}"`, { cwd: storagePath }, (err) => {
-            if (err) {
-                return;
-            }
-        });
     };
 }
 
-module.exports = UserSnippetsService;
+module.exports = SnippetsService;

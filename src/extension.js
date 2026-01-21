@@ -5,10 +5,10 @@ const { exec } = require('child_process');
 const SaxonJS = require('saxon-js');
 
 const StartService = require("./start/start-service.js");
-const UserSnippetsService = require("./snippets/usersnippets-service.js");
+const SnippetsService = require("./snippets/snippets-service.js");
 const { showSnippetsView } = require('./snippets/usersnippets-view.js');
 const FlowViewProvider = require('./flow/flow-view-provider.js');
-const { UserSnippetsTreeProvider } = require("./snippets/usersnippets-tree-provider.js");
+const { SnippetsTreeProvider } = require("./snippets/snippets-tree-provider.js");
 const { UserSnippetsDndController } = require("./snippets/usersnippets-dnd-controller.js")
 const { StartTreeProvider } = require("./start/start-tree-provider.js");
 
@@ -20,9 +20,9 @@ let targets = null;
 let projectNameTrimmed = "skeleton";
 
 function activate(context) {
-	const userSnippetsService = new UserSnippetsService(context);
-	const userSnippetsTreeProvider = new UserSnippetsTreeProvider(context, userSnippetsService);
-	const userSnippetsDndController = new UserSnippetsDndController(context, userSnippetsTreeProvider, userSnippetsService);
+	const snippetsService = new SnippetsService(context);
+	const snippetsTreeProvider = new SnippetsTreeProvider(context, snippetsService);
+	const userSnippetsDndController = new UserSnippetsDndController(context, SnippetsTreeProvider, snippetsService);
 	const startService = new StartService(context);
 	const startTreeProvider = new StartTreeProvider(context, startService);
 
@@ -141,14 +141,18 @@ function activate(context) {
 			["Adapter 1", "Adapter 2", "Adapter 3", "Adapter 4"]
 		);
 		const editor = vscode.window.activeTextEditor;
-		await editor.edit(editBuilder => {
-        	editBuilder.insert(editor.selection.active, adapter);
-    	});
+		if (!editor) {
+			vscode.window.showErrorMessage("No active editor");
+		} else {
+			await editor.edit(editBuilder => {
+        		editBuilder.insert(editor.selection.active, adapter);
+    		});
+		}
 	})
 
 	//Load examples from the Frank!Framework Wiki as VS Code Snippets.
-	userSnippetsService.ensureSnippetsFilesExists();
-	userSnippetsService.loadFrankFrameworkSnippets();
+	snippetsService.ensureSnippetsFilesExists();
+	snippetsService.loadFrankFrameworkSnippets();
 
 	//Init flowchart view
 	const flowViewProvider = new FlowViewProvider(context);
@@ -201,35 +205,45 @@ function activate(context) {
 	});
 
 	//Init user snippets tree view
-	vscode.window.createTreeView("userSnippetsTreeview", {
-		treeDataProvider: userSnippetsTreeProvider,
+	vscode.window.createTreeView("snippetsTreeView", {
+		treeDataProvider: snippetsTreeProvider,
 		dragAndDropController: userSnippetsDndController
 	});
 	vscode.commands.registerCommand('frank.addNewCategoryOfUserSnippets', () => {
-		userSnippetsService.addNewCategoryOfUserSnippets(userSnippetsTreeProvider);
+		snippetsService.addNewCategoryOfUserSnippets(snippetsTreeProvider);
 	});
 	vscode.commands.registerCommand("frank.deleteAllUserSnippetByCategory", (item) => {
-		const userSnippets = userSnippetsService.deleteAllUserSnippetByCategory(item.label);
+		const userSnippets = snippetsService.deleteAllUserSnippetByCategory(item.label);
 
-		userSnippetsTreeProvider.rebuild();
-		userSnippetsTreeProvider.refresh();
+		snippetsTreeProvider.rebuild();
+		snippetsTreeProvider.refresh();
 	});
 	vscode.commands.registerCommand('frank.showUserSnippetsViewPerCategory', (category) => {
-		showSnippetsView(context, category, userSnippetsTreeProvider, userSnippetsService);
+		showSnippetsView(context, category, snippetsTreeProvider, snippetsService);
 	})
 
 	vscode.commands.registerCommand("frank.editUserSnippet", (item) => {
-		showSnippetsView(context, item.category, userSnippetsTreeProvider, userSnippetsService);
+		showSnippetsView(context, item.category, snippetsTreeProvider, snippetsService);
 	});
 	vscode.commands.registerCommand("frank.deleteUserSnippet", (item) => {
-		const userSnippets = userSnippetsService.deleteUserSnippet(item.category, item.index);
+		const userSnippets = snippetsService.deleteUserSnippet(item.category, item.index);
 
-		userSnippetsTreeProvider.rebuild();
-		userSnippetsTreeProvider.refresh();
+		snippetsTreeProvider.rebuild();
+		snippetsTreeProvider.refresh();
+	});
+	vscode.commands.registerCommand("frank.insertSnippet", async function (body) { 
+		const editor = vscode.window.activeTextEditor;
+		if (!editor) {
+			vscode.window.showErrorMessage("No active editor");
+		} else {
+			await editor.edit(editBuilder => {
+        		editBuilder.insert(editor.selection.active, body);
+    		});
+		}
 	});
 
 	vscode.commands.registerCommand('frank.addNewUserSnippet', async function () {
-		await userSnippetsService.addNewUserSnippet(userSnippetsTreeProvider);
+		await snippetsService.addNewUserSnippet(snippetsTreeProvider);
 
 		vscode.window.showInformationMessage("Snippet added!");
 	});

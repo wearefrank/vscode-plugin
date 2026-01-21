@@ -101,13 +101,13 @@ class ProjectTreeItem extends vscode.TreeItem {
         if (method === "ant") {
             this.doUpdate = this.ffVersionSet();
 
-            this.iconPath = new vscode.ThemeIcon(
-                this.doUpdate ? 'sync' : 'sync-ignored'
-            );
+            this.tooltip = this.doUpdate
+                ? `Using Highest Online FF! Version. Right-Click to Toggle.`
+                : `Using Highest Local FF! Version (Download Disabled). Right-Click to Toggle.`;
 
-            this.description = this.doUpdate
-                ? `Using Highest Online FF! Version`
-                : `Using Highest Local FF! Version (Download Disabled)`;
+            this.label = this.doUpdate
+                ? `${project} ⭳`
+                : `${project} 🖫`;
         }
     }
 

@@ -3,7 +3,7 @@
   "publisher": "wearefrank",
   "displayName": "Frank!Framework",
   "description": "A plugin to help users with the development of their Frank!Framework integrations!",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "engines": {
     "vscode": "^1.107.0"
   },
@@ -11,7 +11,7 @@
     "Other"
   ],
   "activationEvents": [
-    "onLanguage:xml"
+    "*"
   ],
   "main": "./src/extension.js",
   "contributes": {
@@ -148,24 +148,19 @@
       "view/title": [
         {
           "command": "frank.addNewCategoryOfUserSnippets",
-          "when": "view == userSnippetsTreeview",
+          "when": "view == snippetsTreeView",
           "group": "navigation"
         }
       ],
       "view/item/context": [
         {
-          "command": "frank.editUserSnippet",
-          "when": "view == userSnippetsTreeview && viewItem == snippetTreeItem",
-          "group": "inline"
-        },
-        {
           "command": "frank.deleteUserSnippet",
-          "when": "view == userSnippetsTreeview && viewItem == snippetTreeItem",
+          "when": "view == snippetsTreeView && viewItem == snippetTreeItem-user",
           "group": "inline@2"
         },
         {
           "command": "frank.deleteAllUserSnippetByCategory",
-          "when": "view == userSnippetsTreeview && viewItem == categoryTreeItem",
+          "when": "view == snippetsTreeView && viewItem == categoryTreeItem-user",
           "group": "inline"
         },
         {
@@ -176,7 +171,7 @@
         {
           "command": "frank.startProject",
           "when": "view == startTreeView && (viewItem == projectTreeItem-ant || viewItem == projectTreeItem-docker || viewItem == projectTreeItem-dockerCompose)",
-          "group": "inline@2"
+          "group": "inline@3"
         },
         {
           "command": "frank.toggleUpdate",
@@ -186,7 +181,7 @@
         {
           "command": "frank.deleteProject",
           "when": "view == startTreeView && (viewItem == projectTreeItem-ant || viewItem == projectTreeItem-docker || viewItem == projectTreeItem-dockerCompose)",
-          "group": "inline@3"
+          "group": "inline@2"
         }
       ]
     },
@@ -253,7 +248,7 @@
       ,
       {
         "command": "frank.deleteProject",
-        "title": "Delete Project",
+        "title": "Delete From List",
         "icon": "$(trash)"
       }
     ],
@@ -290,15 +285,15 @@
       "explorer": [
         {
           "id": "startTreeView",
-          "name": "Start!"
+          "name": "Frank!Start"
         },
         {
           "id": "adapterView",
-          "name": "Adapter!"
+          "name": "Frank!Adapter"
         },
         {
-          "id": "userSnippetsTreeview",
-          "name": "Frank! Snippets"
+          "id": "snippetsTreeView",
+          "name": "Frank!Snippets"
         }
       ]
     },
