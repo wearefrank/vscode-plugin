@@ -33,7 +33,7 @@ function activate(context) {
 			},
 			{
 				label: 'Skeleton',
-				description: 'https://github.com/wearefrank/skeleton'
+				description: 'https://github.com/wearefrank/skeleton?tab=readme-ov-file#steps'
 			},
 			{
 				label: 'Project per Config',
