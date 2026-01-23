@@ -3,7 +3,7 @@
   "publisher": "wearefrank",
   "displayName": "Frank!Framework",
   "description": "A plugin to help users with the development of their Frank!Framework integrations!",
-  "version": "0.0.8",
+  "version": "0.0.9",
   "engines": {
     "vscode": "^1.107.0"
   },
@@ -24,9 +24,9 @@
           {
             "id": "newProject",
             "title": "Open or Create a Frank Project",
-            "description": "In the Activity Bar, open the Frank!Framework Welcome view. From here you can either open an existing Frank project or create a new one. Creating a new project clones the Frank!Runner and a skeleton project into your workspace. You will be asked to give the new project a name.",
+            "description": "In the Activity Bar, open the Frank!Framework Welcome view. From here you can either open an existing Frank project or create a new one. When creating a new project you can choose from a few options. The Simple Frank option creates a simple project, the other options will take you to their respective GitHub pages. When choosing the Simple Frank option, you will be asked to give the new project and configuration a name.",
             "media": {
-              "image": "resources/images/image.png",
+              "image": "resources/images/createfrank.png",
               "altText": "Frank!Framework Welcome View"
             }
           },
@@ -50,8 +50,8 @@
           },
           {
             "id": "start2",
-            "title": "Run with Ant and Toggle FF! Update",
-            "description": "When running a project with Ant, you can choose which version of FF! the Frank!Runner uses: either the highest version available online or the highest version installed locally. Right-click on a project in the Frank!Start view to toggle.",
+            "title": "Run with Ant and Choose FF! Version",
+            "description": "When running a project with Ant, you can choose which version of FF! the Frank!Runner uses: the highest version available online, the highest stable version online or a version already locally installed. Right-click on a project in the Frank!Start view to view and choose an option.",
             "media": {
               "image": "resources/images/toggle.png",
               "altText": "Toggle FF! Update"
