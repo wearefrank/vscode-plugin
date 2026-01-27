@@ -55,9 +55,9 @@ class StartTreeProvider {
             }
         }
 
-        const antTreeItem = new StartTreeItem(`Start with Ant`, existingProjectsAnt, "ant", vscode.TreeItemCollapsibleState.Expanded);
-        const dockerTreeItem = new StartTreeItem("Start with Docker", existingProjectsDocker, "docker", vscode.TreeItemCollapsibleState.Expanded);
-        const dockerComposeTreeItem = new StartTreeItem("Start with Docker Compose", existingProjectsDockerCompose, "dockerCompose", vscode.TreeItemCollapsibleState.Expanded);
+        const antTreeItem = new StartTreeItem(`Start with Ant`, existingProjectsAnt, "ant", vscode.TreeItemCollapsibleState.Expanded, this.startService);
+        const dockerTreeItem = new StartTreeItem("Start with Docker", existingProjectsDocker, "docker", vscode.TreeItemCollapsibleState.Expanded, this.startService);
+        const dockerComposeTreeItem = new StartTreeItem("Start with Docker Compose", existingProjectsDockerCompose, "dockerCompose", vscode.TreeItemCollapsibleState.Expanded, this.startService);
 
         this.startTreeItems = [antTreeItem, dockerTreeItem, dockerComposeTreeItem];
     }
@@ -82,12 +82,61 @@ class StartTreeProvider {
 }
 
 class StartTreeItem extends vscode.TreeItem {
-    constructor(label, projects, method, collapsibleState) {
+    constructor(label, projects, method, collapsibleState, startService, workingDir) {
         super(label, collapsibleState);
         this.projects = projects;
         this.method = method;
-        this.contextValue = `startTreeItem`;
+        this.contextValue = `startTreeItem-${method}`;
+        this.startService = startService;
+        this.path = "";
+        // this.a = await startService.getWorkingDirectory();
 
+
+        // if (method === "ant") {
+        //     this.tooltip = this.startService.ffVersionSet(this.a)
+        //         ? `Using Local FF! Version (Download Disabled). Right-Click to Change.`
+        //         : `Using Highest Online FF! Version. Right-Click to Change.`;
+            
+        //     if (this.startService.updateStrategySet(this.a)) {
+        //         this.tooltip = "Using Highest Stable Online FF! Version. Right-Click to Change."
+        //     }
+            
+        //     this.label = this.startService.ffVersionSet(this.a)
+        //         ? `${path.basename(this.a)} 🗁 ${this.startService.getSetFFVersion(this.a)}`
+        //         : `${path.basename(this.a)} ⭳`;
+
+        //     if (this.startService.updateStrategySet(this.a)) {
+        //         this.label = `${path.basename(this.a)} [⭳]`
+        //     }
+        // }
+        if (method === "ant"){
+            this.set();
+        }
+    
+    }
+
+    async set() {
+        console.log("a");
+        let a = await this.startService.getWorkingDirectory();
+        console.log(a);
+        this.path = a;
+    
+        this.tooltip = this.startService.ffVersionSet(a)
+            ? `Using Local FF! Version (Download Disabled). Right-Click to Change.`
+            : `Using Highest Online FF! Version. Right-Click to Change.`;
+        
+        if (this.startService.updateStrategySet(a)) {
+            this.tooltip = "Using Highest Stable Online FF! Version. Right-Click to Change."
+        }
+        
+        this.description = this.startService.ffVersionSet(a)
+            ? `${path.basename(a)} 🗁 ${this.startService.getSetFFVersion(a)}`
+            : `${path.basename(a)} ⭳`;
+
+        if (this.startService.updateStrategySet(a)) {
+            this.description = `${path.basename(a)} [⭳]`
+        }
+        
     }
 }
 

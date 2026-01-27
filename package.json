@@ -167,7 +167,7 @@
         },
         {
           "command": "frank.toggleUpdate",
-          "when": "view == startTreeView && viewItem == projectTreeItem-ant",
+          "when": "view == startTreeView && (viewItem == projectTreeItem-ant || viewItem == startTreeItem-ant)",
           "group": "navigation"
         },
         {
