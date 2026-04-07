@@ -96,7 +96,7 @@ async function activate(context) {
             if (config.get('enableValidation')) {
                 vscode.workspace.textDocuments.forEach(openDoc => {
                     if (openDoc.languageId === 'xml') {
-                        frankValidator.validate(openDoc);
+                        triggerValidation(openDoc);
                     }
                 });
             }
@@ -107,7 +107,9 @@ async function activate(context) {
     }), vscode.workspace.onDidDeleteFiles(event => {
         event.files.forEach(uri => configurationIndex.removeFile(uri));
     }), vscode.workspace.onDidChangeTextDocument(e => {
-        triggerValidation(e.document);
+        if (e.document.languageId === 'xml' && config.get('enableValidation')) {
+            triggerValidation(e.document);
+        }
     }), vscode.workspace.onDidCloseTextDocument(doc => frankValidator.clear(doc)), vscode.window.onDidChangeActiveTextEditor(() => {
         setStartTreeViewDescription();
         if (config.get('enableFlowVisualization')) {

@@ -124,7 +124,7 @@ export async function activate(context: vscode.ExtensionContext) {
                 if (config.get('enableValidation')) {
                     vscode.workspace.textDocuments.forEach(openDoc => {
                         if (openDoc.languageId === 'xml') {
-                            frankValidator.validate(openDoc);
+                            triggerValidation(openDoc);
                         }
                     });
                 }
@@ -140,7 +140,9 @@ export async function activate(context: vscode.ExtensionContext) {
         }),
 
         vscode.workspace.onDidChangeTextDocument(e => {
-            triggerValidation(e.document);
+            if (e.document.languageId === 'xml' && config.get('enableValidation')) {
+                triggerValidation(e.document);
+            }
         }),
 
         vscode.workspace.onDidCloseTextDocument(doc => frankValidator.clear(doc)),
