@@ -19,7 +19,7 @@ const sessionKeyDefinitionProvider_1 = require("./navigation/sessionKeyDefinitio
 const masterRenameProvider_1 = require("./rename/masterRenameProvider");
 const frankRenameHintProvider_1 = require("./rename/frankRenameHintProvider");
 const pipeReferenceProvider_1 = require("./references/pipeReferenceProvider");
-let targets = null;
+let targets = {};
 let projectNameTrimmed = "skeleton";
 let configNameTrimmed = "";
 async function activate(context) {
@@ -123,6 +123,15 @@ async function activate(context) {
     }));
     if (vscode.window.activeTextEditor && vscode.window.activeTextEditor.document.languageId === 'xml') {
         triggerValidation(vscode.window.activeTextEditor.document);
+    }
+    // Load components.json once — used by the document link provider
+    try {
+        const componentsPath = context.asAbsolutePath('./resources/components.json');
+        const components = fs.readFileSync(componentsPath, 'utf8');
+        targets = JSON.parse(components);
+    }
+    catch (err) {
+        console.error("Failed to load components.json:", err);
     }
     vscode.commands.registerCommand('frank.createNewFrank', async function () {
         const items = [
@@ -329,10 +338,9 @@ async function activate(context) {
                 const text = document.getText();
                 const regex = /\w+/g;
                 let match;
-                const componentsPath = context.asAbsolutePath('./resources/components.json');
-                const components = fs.readFileSync(componentsPath, 'utf8');
-                targets = JSON.parse(components);
                 while ((match = regex.exec(text)) !== null) {
+                    if (token.isCancellationRequested)
+                        break;
                     targetLoop: for (const i in targets) {
                         for (const j in targets[i]) {
                             if (targets[i][j].includes(match[0])) {

@@ -195,6 +195,8 @@ class StartService {
         if (file.startsWith('ibis-adapterframework-webapp')) {
             return true;
         }
+
+        return false;
     }
 
     async toggleUpdate(workingDir: string) {
@@ -338,12 +340,16 @@ class StartService {
     getSetFFVersion(workingDir: string) {
         const frankRunnerPropertiesFile = path.join(workingDir, "frank-runner.properties");
 
-        let frankRunnerProperties = fs.readFileSync(frankRunnerPropertiesFile, "utf8");
+        if (fs.existsSync(frankRunnerPropertiesFile)) {
+            let frankRunnerProperties = fs.readFileSync(frankRunnerPropertiesFile, "utf8");
 
-        const match = frankRunnerProperties.match(/^\s*ff\.version=.*$/m);
-        const setFFversion = match ? match[0].split("=")[1] : "";
+            const match = frankRunnerProperties.match(/^\s*ff\.version=.*$/m);
+            const setFFversion = match ? match[0].split("=")[1] : "";
 
-        return setFFversion;
+            return setFFversion;
+        }
+
+        return false;
     }
 
     async startWithAnt(workingDir: string | null | undefined, isCurrent: boolean) {
@@ -387,7 +393,7 @@ class StartService {
         term.sendText(`cd "${workingDir}"`);
         
         const composeFileName = this.getComposeFile(workingDir) || "docker-compose.yml";
-        term.sendText(`docker-compose up`);
+        term.sendText(`docker-compose -f <composeFileName> up`);
 
         await this.saveRanProject("dockerCompose", workingDir);
     }

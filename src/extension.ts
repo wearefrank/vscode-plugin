@@ -17,7 +17,7 @@ import { MasterRenameProvider } from './rename/masterRenameProvider';
 import { FrankRenameHintProvider } from './rename/frankRenameHintProvider';
 import { PipeReferenceProvider } from './references/pipeReferenceProvider';
 
-let targets: any = null;
+let targets: Record<string, Record<string, string[]>> = {};
 let projectNameTrimmed = "skeleton";
 let configNameTrimmed = "";
 
@@ -169,6 +169,15 @@ export async function activate(context: vscode.ExtensionContext) {
         triggerValidation(vscode.window.activeTextEditor.document);
     }
 
+    // Load components.json once — used by the document link provider
+    try {
+        const componentsPath = context.asAbsolutePath('./resources/components.json');
+        const components = fs.readFileSync(componentsPath, 'utf8');
+        targets = JSON.parse(components);
+    } catch (err) {
+        console.error("Failed to load components.json:", err);
+    }
+
     vscode.commands.registerCommand('frank.createNewFrank', async function () {
         const items = [
             { label: 'Simple Frank' },
@@ -218,10 +227,9 @@ export async function activate(context: vscode.ExtensionContext) {
 
             try {
                 if (!fs.existsSync(path.join(rootPath, "frank-runner"))) {
-                await execAsync('git clone https://github.com/wearefrank/frank-runner.git', rootPath);
-            }
-            }
-            catch (error) {
+                    await execAsync('git clone https://github.com/wearefrank/frank-runner.git', rootPath);
+                }
+            } catch (error) {
                 vscode.window.showErrorMessage(`Failed to clone repository: ${error}`);
             }
                 
@@ -342,7 +350,7 @@ export async function activate(context: vscode.ExtensionContext) {
         vscode.window.showInformationMessage("Snippet added!");
     });
 
-    async function copyDir(source: vscode.Uri, target: vscode.Uri) {
+    async function copyDir(source: vscode.Uri, target: vscode.Uri): Promise<void> {
         await vscode.workspace.fs.createDirectory(target);
         const entries = await vscode.workspace.fs.readDirectory(source);
 
@@ -365,7 +373,7 @@ export async function activate(context: vscode.ExtensionContext) {
         startTreeView.description = project ? path.basename(project) : "No Project Open in Editor/No Runable File Found";
     }
 
-    async function startHandler(item: any, isCurrent: boolean) {
+    async function startHandler(item: { method: 'ant' | 'dockerCompose'; path: string }, isCurrent: boolean): Promise<void> {
         const editor = vscode.window.activeTextEditor;
         if (editor && editor.document.languageId === 'xml') {
             frankValidator.validate(editor.document);
@@ -398,16 +406,14 @@ export async function activate(context: vscode.ExtensionContext) {
 
     if (config.get('enableDocumentLinks')) { vscode.languages.registerDocumentLinkProvider({ language: 'xml', scheme: 'file' }, {
         provideDocumentLinks(document, token) {
-            const links = [];
+            const links: vscode.DocumentLink[] = [];
             const text = document.getText();
             const regex = /\w+/g;
             let match;
 
-            const componentsPath = context.asAbsolutePath('./resources/components.json');
-            const components = fs.readFileSync(componentsPath, 'utf8');
-            targets = JSON.parse(components);
-
             while ((match = regex.exec(text)) !== null) {
+                if (token.isCancellationRequested) break;
+
                 targetLoop: for (const i in targets) {
                     for (const j in targets[i]) {
                         if (targets[i][j].includes(match[0])) {
