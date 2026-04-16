@@ -76,12 +76,18 @@ class StartService {
     async getWorkingDirectory(file) {
         const editor = vscode.window.activeTextEditor;
         if (editor) {
-            const currentDir = path.dirname(editor.document.uri.fsPath);
-            if (file && fs.existsSync(path.join(currentDir, file))) {
-                return currentDir;
-            }
-            if (!file && (fs.existsSync(path.join(currentDir, "build.xml")) || fs.existsSync(path.join(currentDir, "Dockerfile")) || this.getComposeFile(currentDir))) {
-                return currentDir;
+            let currentDir = path.dirname(editor.document.uri.fsPath);
+            while (true) {
+                if (file && fs.existsSync(path.join(currentDir, file))) {
+                    return currentDir;
+                }
+                if (!file && (fs.existsSync(path.join(currentDir, "build.xml")) || fs.existsSync(path.join(currentDir, "Dockerfile")) || this.getComposeFile(currentDir))) {
+                    return currentDir;
+                }
+                const parentDir = path.dirname(currentDir);
+                if (parentDir === currentDir)
+                    break;
+                currentDir = parentDir;
             }
         }
         if (file === "docker-compose.yml") {
@@ -273,7 +279,7 @@ class StartService {
         term.show();
         term.sendText(`cd "${workingDir}"`);
         const antBatPath = path.join(runnerPath, "ant.bat");
-        term.sendText(`"${antBatPath}"`);
+        term.sendText(`& "${antBatPath}"`);
         await this.saveRanProject("ant", workingDir);
     }
     async startWithDockerCompose(workingDir, isCurrent) {
