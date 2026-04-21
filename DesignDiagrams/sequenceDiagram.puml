@@ -1,16 +1,27 @@
 @startuml
 actor Developer
 participant "VS Code Editor" as Editor
-participant "FlowViewProvider" as Webview
-participant "Frank Framework\n(XSLT / Saxon)" as Saxon
+participant "FlowViewProvider" as Provider
+participant "Saxon-JS\n(XSLT Engine)" as Saxon
+participant "frank-config-layout" as Layout
+participant "Webview" as Webview
 
-Developer -> Editor : Opens XML file
-Editor -> Webview : resolveWebviewView()
-Webview -> Editor : Requests document text
-Editor --> Webview : XML content
-Webview -> Saxon : Transforms XML (adapter2mermaid.xsl)
-Saxon --> Webview : Mermaid syntax
-Webview -> Webview : Generate HTML with Mermaid syntax
-Webview -> Editor : Update Webview HTML
-Editor --> Developer : Shows visual diagram
+Developer -> Editor : Opens / edits XML file
+Editor -> Provider : updateWebview()\n(onDidChangeActiveTextEditor\nor onDidSaveTextDocument)
+Provider -> Editor : Reads document text
+
+Provider -> Provider : Resolves XML ENTITY\nSYSTEM references (inline)
+Provider -> Provider : Resolves <Include ref="..."/> tags (inline)
+
+Provider -> Saxon : Transform with canonicalize.xsl\n(normalize XML structure)
+Saxon --> Provider : Canonicalized XML
+
+Provider -> Saxon : Transform with adapter2mermaid.xsl\nor configuration2mermaid.xsl\n(with params.xml)
+Saxon --> Provider : Mermaid graph syntax
+
+Provider -> Layout : mermaid2svg(mermaidSyntax)
+Layout --> Provider : SVG string
+
+Provider -> Webview : Set HTML with embedded SVG\n(+ svg-pan-zoom, CSS)
+Webview --> Developer : Shows interactive flow diagram
 @enduml

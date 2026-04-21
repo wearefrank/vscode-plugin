@@ -8,29 +8,31 @@ rectangle "VS Code" {
 }
 
 rectangle "External Tools & Resources" {
-    component "Frank!Runner" as Runner
+    component "Frank!Runner\n(Git submodule)" as Runner
     component "Frank!Doc" as Documentation
     component "Frank!Framework Wiki" as Wiki
-    component "Docker / Docker Compose" as Docker
+    component "Docker Compose" as Docker
     component "Apache Ant" as Ant
 }
 
 User -> Extension : Interacts with
 
-Extension ..> Runner : Runs Frank projects
-Extension ..> Docker : Deploys via
-Extension ..> Ant : Executes build scripts
-Extension ..> Documentation : Links component docs
-Extension ..> Wiki : Fetches snippets
+Extension ..> Runner : Runs Frank projects via Ant
+Extension ..> Docker : Runs Frank projects via Docker Compose
+Extension ..> Ant : Executes Ant build scripts
+Extension ..> Documentation : Links component docs (Frank!Doc)
+Extension ..> Wiki : Fetches framework snippets
 
 note right of Extension
   **Features:**
-  * Open/Create new Frank projects
-  * Run Frank (Ant, Docker, Docker Compose)
-  * Manage Frank!Framework versions
-  * Visualize Configuration Flowchart
-  * Manage/Insert Snippets (Wiki & User)
-  * Link to Frank!Doc
+  * Create new Frank projects (Simple, Skeleton, etc.)
+  * Run Frank via Ant or Docker Compose
+  * Visualize configuration as flowchart (SVG)
+  * Real-time XML validation (debounced 300ms)
+  * Go-to-definition & Find References (pipes, sessionkeys)
+  * Rename refactoring (pipe names, sessionkeys)
+  * Manage & insert snippets (Wiki-sourced & user-created)
+  * Frank!Doc hyperlinks in XML editor
 end note
 
 @enduml

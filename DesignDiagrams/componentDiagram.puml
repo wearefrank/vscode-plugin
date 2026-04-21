@@ -15,28 +15,66 @@ package "WeAreFrank! VS Code Extension" {
     component "Snippet Module" {
         [SnippetsTreeProvider]
         [SnippetsService]
+        [SnippetsDndController]
         [UsersnippetsView]
     }
 
-    component "Editor Features" {
+    component "Start Module" {
+        [StartService]
+        [StartTreeProvider]
+        [CreateFrankView]
+    }
+
+    component "Flow Module" {
+        [FlowViewProvider]
+    }
+
+    component "Validation Module" {
+        [FrankValidator]
+        [ConfigurationIndex]
+        [ExpressionValidator]
+    }
+
+    component "Rename Module" {
+        [MasterRenameProvider]
         [FrankRenameProvider]
         [SessionKeyRenameProvider]
-        [FrankValidator]
+        [FrankRenameHintProvider]
+    }
+
+    component "Navigation Module" {
+        [SessionKeyDefinitionProvider]
         [PipeReferenceProvider]
     }
 
-    component "Flow Diagram Module" {
-        [FlowViewProvider]
+    component "Documentation Module" {
+        [DocumentLinkProvider]
     }
 }
 
 Entry ..> [SnippetsTreeProvider] : registers
-Entry ..> [FrankRenameProvider] : registers
+Entry ..> [StartTreeProvider] : registers
 Entry ..> [FlowViewProvider] : registers
-Entry ..> [FrankValidator] : registers
+Entry ..> [FrankValidator] : uses
+Entry ..> [ConfigurationIndex] : builds & updates
+Entry ..> [MasterRenameProvider] : registers
+Entry ..> [FrankRenameHintProvider] : registers
+Entry ..> [SessionKeyDefinitionProvider] : registers
+Entry ..> [PipeReferenceProvider] : registers
+Entry ..> [DocumentLinkProvider] : registers
 
-[FlowViewProvider] --> [Webview API] : renders XSLT/Mermaid
-[SnippetsService] --> [Workspace API] : reads/writes configurations
-[FrankRenameProvider] --> [Language Features] : implements RenameProvider
-[UsersnippetsView] --> [Webview API] : renders UI
+[MasterRenameProvider] --> [FrankRenameProvider] : delegates name/path rename
+[MasterRenameProvider] --> [SessionKeyRenameProvider] : delegates sessionKey rename
+[FrankValidator] --> [ExpressionValidator] : validates XPath/JSONPath
+[FrankValidator] --> [ConfigurationIndex] : looks up listener definitions
+
+[FlowViewProvider] --> [Webview API] : renders SVG via Saxon-JS + frank-config-layout
+[SnippetsService] --> [Workspace API] : reads/writes snippet files
+[UsersnippetsView] --> [Webview API] : renders snippet management UI
+[CreateFrankView] --> [Webview API] : renders project creation UI
+[StartService] --> [Workspace API] : manages run history
+[MasterRenameProvider] --> [Language Features] : implements RenameProvider
+[SessionKeyDefinitionProvider] --> [Language Features] : implements DefinitionProvider
+[PipeReferenceProvider] --> [Language Features] : implements ReferenceProvider
+[FrankRenameHintProvider] --> [Language Features] : implements InlayHintsProvider
 @enduml

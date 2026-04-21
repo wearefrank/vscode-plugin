@@ -1,25 +1,40 @@
 @startuml
 skinparam classAttributeIconSize 0
 
-interface vscode.RenameProvider <<interface>> {
-    +provideRenameEdits()
-    +prepareRename()
+interface "vscode.RenameProvider" <<interface>> {
+    +provideRenameEdits(document, position, newName, token): WorkspaceEdit
+    +prepareRename(document, position, token): Range
+}
+
+interface "vscode.InlayHintsProvider" <<interface>> {
+    +provideInlayHints(document, range, token): InlayHint[]
+}
+
+class MasterRenameProvider {
+    -frankProvider: FrankRenameProvider
+    -sessionProvider: SessionKeyRenameProvider
+    +prepareRename(document, position, token): Range
+    +provideRenameEdits(document, position, newName, token): WorkspaceEdit
+    -isCursorInsideAttributeValue(line, charIndex, regex): boolean
 }
 
 class FrankRenameProvider {
-    -frankValidator: FrankValidator
-    +provideRenameEdits(document: TextDocument, position: Position, newName: string, token: CancellationToken): ProviderResult<WorkspaceEdit>
-    +prepareRename(document: TextDocument, position: Position, token: CancellationToken): ProviderResult<Range>
+    +prepareRename(document, position, token): Range
+    +provideRenameEdits(document, position, newName, token): WorkspaceEdit
 }
 
 class SessionKeyRenameProvider {
-    +provideRenameEdits(...)
+    +prepareRename(document, position, token): Range
+    +provideRenameEdits(document, position, newName, token): WorkspaceEdit
 }
 
 class FrankRenameHintProvider {
-    +provideInlayHints(...)
+    +register(context): void
+    +provideInlayHints(document, range, token): InlayHint[]
 }
 
-vscode.RenameProvider <|.. FrankRenameProvider
-FrankRenameProvider --> SessionKeyRenameProvider : delegates sessionKey logic
+"vscode.RenameProvider" <|.. MasterRenameProvider
+MasterRenameProvider --> FrankRenameProvider : delegates name/path rename\n(adapter-scoped)
+MasterRenameProvider --> SessionKeyRenameProvider : delegates sessionKey rename\n(workspace-wide)
+"vscode.InlayHintsProvider" <|.. FrankRenameHintProvider
 @enduml
