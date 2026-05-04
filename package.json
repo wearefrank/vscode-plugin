@@ -258,7 +258,8 @@
           "id": "flowView",
           "name": "Flow",
           "type": "webview",
-          "icon": "$(symbol-icon)"
+          "icon": "$(symbol-icon)",
+          "when": "config.frank.enableFlowVisualization"
         }
       ],
       "welcomeViewContainer": [
@@ -277,9 +278,50 @@
         {
           "id": "snippetsTreeView",
           "name": "Frank!Snippets",
-          "icon": "$(symbol-snippet)"
+          "icon": "$(symbol-snippet)",
+          "when": "config.frank.enableSnippets"
         }
       ]
+    },
+    "configuration": {
+      "title": "Frank!Framework",
+      "properties": {
+        "frank.enableValidation": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable real-time XML validation for Frank configurations."
+        },
+        "frank.enableFlowVisualization": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable the flow chart visualization in the secondary sidebar."
+        },
+        "frank.enableSnippets": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable Frank!Snippets: loading and suggesting snippets from the Frank!Framework wiki."
+        },
+        "frank.enableGoToDefinition": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable go-to-definition for sessionKey attributes."
+        },
+        "frank.enableFindReferences": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable find references for pipe names."
+        },
+        "frank.enableRename": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable rename support for pipe names and session keys."
+        },
+        "frank.enableDocumentLinks": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable Frank!Doc hyperlinks for component names in XML files."
+        }
+      }
     },
     "viewsWelcome": [
       {
