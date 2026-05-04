@@ -62,10 +62,10 @@ class ProjectTreeItem extends vscode.TreeItem {
         this.contextValue = `projectTreeItem-${method}`;
         if (method === "ant") {
             this.tooltip = startService.ffVersionSet(projectPath)
-                ? `Using Local FF! Version (Download Disabled). Right-Click to Change.`
-                : `Using Highest Online FF! Version. Right-Click to Change.`;
+                ? `Using Local FF! Version (Download Disabled). Right-Click to Change.\n${projectPath}`
+                : `Using Highest Online FF! Version. Right-Click to Change.\n${projectPath}`;
             if (startService.updateStrategySet(projectPath)) {
-                this.tooltip = "Using Highest Stable Online FF! Version. Right-Click to Change.";
+                this.tooltip = `Using Highest Stable Online FF! Version. Right-Click to Change.\n${projectPath}`;
             }
             this.label = startService.ffVersionSet(projectPath)
                 ? `${project} 🗁 ${startService.getSetFFVersion(projectPath)}`
@@ -73,6 +73,9 @@ class ProjectTreeItem extends vscode.TreeItem {
             if (startService.updateStrategySet(projectPath)) {
                 this.label = `${project} [⭳]`;
             }
+        }
+        if (method === "dockerCompose") {
+            this.tooltip = projectPath;
         }
     }
 }
