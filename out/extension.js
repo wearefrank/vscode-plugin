@@ -124,9 +124,6 @@ async function activate(context) {
             });
         }
     }));
-    if (vscode.window.activeTextEditor && vscode.window.activeTextEditor.document.languageId === 'xml') {
-        triggerValidation(vscode.window.activeTextEditor.document);
-    }
     // Load components.json once — used by the document link provider
     try {
         const componentsPath = context.asAbsolutePath('./resources/components.json');
@@ -181,40 +178,42 @@ async function activate(context) {
         startTreeProvider.rebuild();
         startTreeProvider.refresh();
     });
-    vscode.commands.registerCommand('frank.addNewCategoryOfUserSnippets', () => {
-        snippetsService.addNewCategoryOfUserSnippets(snippetsTreeProvider);
-    });
-    vscode.commands.registerCommand("frank.deleteAllUserSnippetByCategory", (item) => {
-        snippetsService.deleteAllUserSnippetByCategory(item.label);
-        snippetsTreeProvider.rebuild();
-        snippetsTreeProvider.refresh();
-    });
-    vscode.commands.registerCommand('frank.showUserSnippetsViewPerCategory', (category) => {
-        (0, usersnippets_view_1.showSnippetsView)(context, category, snippetsTreeProvider, snippetsService);
-    });
-    vscode.commands.registerCommand("frank.editUserSnippet", (item) => {
-        (0, usersnippets_view_1.showSnippetsView)(context, item.category, snippetsTreeProvider, snippetsService);
-    });
-    vscode.commands.registerCommand("frank.deleteUserSnippet", (item) => {
-        snippetsService.deleteUserSnippet(item.category, item.index);
-        snippetsTreeProvider.rebuild();
-        snippetsTreeProvider.refresh();
-    });
-    vscode.commands.registerCommand("frank.insertSnippet", async function (body) {
-        const editor = vscode.window.activeTextEditor;
-        if (!editor) {
-            vscode.window.showErrorMessage("No active editor");
-        }
-        else {
-            await editor.edit(editBuilder => {
-                editBuilder.insert(editor.selection.active, body);
-            });
-        }
-    });
-    vscode.commands.registerCommand('frank.addNewUserSnippet', async function () {
-        await snippetsService.addNewUserSnippet(snippetsTreeProvider);
-        vscode.window.showInformationMessage("Snippet added!");
-    });
+    if (config.get('enableSnippets')) {
+        vscode.commands.registerCommand('frank.addNewCategoryOfUserSnippets', () => {
+            snippetsService.addNewCategoryOfUserSnippets(snippetsTreeProvider);
+        });
+        vscode.commands.registerCommand("frank.deleteAllUserSnippetByCategory", (item) => {
+            snippetsService.deleteAllUserSnippetByCategory(item.label);
+            snippetsTreeProvider.rebuild();
+            snippetsTreeProvider.refresh();
+        });
+        vscode.commands.registerCommand('frank.showUserSnippetsViewPerCategory', (category) => {
+            (0, usersnippets_view_1.showSnippetsView)(context, category, snippetsTreeProvider, snippetsService);
+        });
+        vscode.commands.registerCommand("frank.editUserSnippet", (item) => {
+            (0, usersnippets_view_1.showSnippetsView)(context, item.category, snippetsTreeProvider, snippetsService);
+        });
+        vscode.commands.registerCommand("frank.deleteUserSnippet", (item) => {
+            snippetsService.deleteUserSnippet(item.category, item.index);
+            snippetsTreeProvider.rebuild();
+            snippetsTreeProvider.refresh();
+        });
+        vscode.commands.registerCommand("frank.insertSnippet", async function (body) {
+            const editor = vscode.window.activeTextEditor;
+            if (!editor) {
+                vscode.window.showErrorMessage("No active editor");
+            }
+            else {
+                await editor.edit(editBuilder => {
+                    editBuilder.insert(editor.selection.active, body);
+                });
+            }
+        });
+        vscode.commands.registerCommand('frank.addNewUserSnippet', async function () {
+            await snippetsService.addNewUserSnippet(snippetsTreeProvider);
+            vscode.window.showInformationMessage("Snippet added!");
+        });
+    }
     async function copyDir(source, target) {
         await vscode.workspace.fs.createDirectory(target);
         const entries = await vscode.workspace.fs.readDirectory(source);
@@ -237,7 +236,7 @@ async function activate(context) {
     }
     async function startHandler(item, isCurrent) {
         const editor = vscode.window.activeTextEditor;
-        if (editor && editor.document.languageId === 'xml') {
+        if (config.get('enableValidation') && editor && editor.document.languageId === 'xml') {
             frankValidator.validate(editor.document);
             const diagnostics = diagnosticCollection.get(editor.document.uri);
             const hasErrors = diagnostics && diagnostics.some(d => d.severity === vscode.DiagnosticSeverity.Error);
@@ -267,7 +266,7 @@ async function activate(context) {
         });
     }
     if (config.get('enableDocumentLinks')) {
-        vscode.languages.registerDocumentLinkProvider({ language: 'xml', scheme: 'file' }, {
+        context.subscriptions.push(vscode.languages.registerDocumentLinkProvider({ language: 'xml', scheme: 'file' }, {
             provideDocumentLinks(document, token) {
                 const links = [];
                 const text = document.getText();
@@ -289,7 +288,7 @@ async function activate(context) {
                 }
                 return links;
             }
-        });
+        }));
     }
     // Execute Startup Actions
     setStartTreeViewDescription();

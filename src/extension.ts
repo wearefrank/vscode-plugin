@@ -168,10 +168,6 @@ export async function activate(context: vscode.ExtensionContext) {
         })
     );
 
-    if (vscode.window.activeTextEditor && vscode.window.activeTextEditor.document.languageId === 'xml') {
-        triggerValidation(vscode.window.activeTextEditor.document);
-    }
-
     // Load components.json once — used by the document link provider
     try {
         const componentsPath = context.asAbsolutePath('./resources/components.json');
@@ -231,45 +227,47 @@ export async function activate(context: vscode.ExtensionContext) {
         startTreeProvider.refresh();
     });
 
-    vscode.commands.registerCommand('frank.addNewCategoryOfUserSnippets', () => {
-        snippetsService.addNewCategoryOfUserSnippets(snippetsTreeProvider);
-    });
+    if (config.get('enableSnippets')) {
+        vscode.commands.registerCommand('frank.addNewCategoryOfUserSnippets', () => {
+            snippetsService.addNewCategoryOfUserSnippets(snippetsTreeProvider);
+        });
 
-    vscode.commands.registerCommand("frank.deleteAllUserSnippetByCategory", (item) => {
-        snippetsService.deleteAllUserSnippetByCategory(item.label);
-        snippetsTreeProvider.rebuild();
-        snippetsTreeProvider.refresh();
-    });
+        vscode.commands.registerCommand("frank.deleteAllUserSnippetByCategory", (item) => {
+            snippetsService.deleteAllUserSnippetByCategory(item.label);
+            snippetsTreeProvider.rebuild();
+            snippetsTreeProvider.refresh();
+        });
 
-    vscode.commands.registerCommand('frank.showUserSnippetsViewPerCategory', (category) => {
-        showSnippetsView(context, category, snippetsTreeProvider, snippetsService);
-    });
+        vscode.commands.registerCommand('frank.showUserSnippetsViewPerCategory', (category) => {
+            showSnippetsView(context, category, snippetsTreeProvider, snippetsService);
+        });
 
-    vscode.commands.registerCommand("frank.editUserSnippet", (item) => {
-        showSnippetsView(context, item.category, snippetsTreeProvider, snippetsService);
-    });
+        vscode.commands.registerCommand("frank.editUserSnippet", (item) => {
+            showSnippetsView(context, item.category, snippetsTreeProvider, snippetsService);
+        });
 
-    vscode.commands.registerCommand("frank.deleteUserSnippet", (item) => {
-        snippetsService.deleteUserSnippet(item.category, item.index);
-        snippetsTreeProvider.rebuild();
-        snippetsTreeProvider.refresh();
-    });
+        vscode.commands.registerCommand("frank.deleteUserSnippet", (item) => {
+            snippetsService.deleteUserSnippet(item.category, item.index);
+            snippetsTreeProvider.rebuild();
+            snippetsTreeProvider.refresh();
+        });
 
-    vscode.commands.registerCommand("frank.insertSnippet", async function (body) { 
-        const editor = vscode.window.activeTextEditor;
-        if (!editor) {
-            vscode.window.showErrorMessage("No active editor");
-        } else {
-            await editor.edit(editBuilder => {
-                editBuilder.insert(editor.selection.active, body);
-            });
-        }
-    });
+        vscode.commands.registerCommand("frank.insertSnippet", async function (body) {
+            const editor = vscode.window.activeTextEditor;
+            if (!editor) {
+                vscode.window.showErrorMessage("No active editor");
+            } else {
+                await editor.edit(editBuilder => {
+                    editBuilder.insert(editor.selection.active, body);
+                });
+            }
+        });
 
-    vscode.commands.registerCommand('frank.addNewUserSnippet', async function () {
-        await snippetsService.addNewUserSnippet(snippetsTreeProvider);
-        vscode.window.showInformationMessage("Snippet added!");
-    });
+        vscode.commands.registerCommand('frank.addNewUserSnippet', async function () {
+            await snippetsService.addNewUserSnippet(snippetsTreeProvider);
+            vscode.window.showInformationMessage("Snippet added!");
+        });
+    }
 
     async function copyDir(source: vscode.Uri, target: vscode.Uri): Promise<void> {
         await vscode.workspace.fs.createDirectory(target);
@@ -296,7 +294,7 @@ export async function activate(context: vscode.ExtensionContext) {
 
     async function startHandler(item: { method: 'ant' | 'dockerCompose'; path: string }, isCurrent: boolean): Promise<void> {
         const editor = vscode.window.activeTextEditor;
-        if (editor && editor.document.languageId === 'xml') {
+        if (config.get('enableValidation') && editor && editor.document.languageId === 'xml') {
             frankValidator.validate(editor.document);
             const diagnostics = diagnosticCollection.get(editor.document.uri);
             const hasErrors = diagnostics && diagnostics.some(d => d.severity === vscode.DiagnosticSeverity.Error);
@@ -325,7 +323,7 @@ export async function activate(context: vscode.ExtensionContext) {
         });
     }
 
-    if (config.get('enableDocumentLinks')) { vscode.languages.registerDocumentLinkProvider({ language: 'xml', scheme: 'file' }, {
+    if (config.get('enableDocumentLinks')) { context.subscriptions.push(vscode.languages.registerDocumentLinkProvider({ language: 'xml', scheme: 'file' }, {
         provideDocumentLinks(document, token) {
             const links: vscode.DocumentLink[] = [];
             const text = document.getText();
@@ -348,7 +346,7 @@ export async function activate(context: vscode.ExtensionContext) {
             }
             return links;
         }
-    }); }
+    })); }
 
     // Execute Startup Actions
     setStartTreeViewDescription();
