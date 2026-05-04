@@ -60,10 +60,12 @@ async function activate(context) {
         treeDataProvider: startTreeProvider
     });
     // Init snippets view
-    vscode.window.createTreeView("snippetsTreeView", {
-        treeDataProvider: snippetsTreeProvider,
-        dragAndDropController: snippetsDndController
-    });
+    if (config.get('enableSnippets')) {
+        vscode.window.createTreeView("snippetsTreeView", {
+            treeDataProvider: snippetsTreeProvider,
+            dragAndDropController: snippetsDndController
+        });
+    }
     context.subscriptions.push(vscode.workspace.onDidSaveTextDocument(async (doc) => {
         if (doc.languageId === 'xml') {
             await configurationIndex.updateFile(doc.uri);
