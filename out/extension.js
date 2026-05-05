@@ -25,6 +25,7 @@ let projectNameTrimmed = "skeleton";
 let configNameTrimmed = "";
 async function activate(context) {
     console.log('Activating WeAreFrank! Extension...');
+    const config = vscode.workspace.getConfiguration('frank');
     const configurationIndex = new configuration_index_1.ConfigurationIndex();
     await configurationIndex.buildIndex();
     const diagnosticCollection = vscode.languages.createDiagnosticCollection('frank-framework');
@@ -45,19 +46,17 @@ async function activate(context) {
     const triggerValidation = (document) => {
         if (document.languageId !== 'xml')
             return;
-        // Clear existing timeout
+        if (!config.get('enableValidation'))
+            return;
         if (validationTimeout) {
             clearTimeout(validationTimeout);
         }
-        // Cancel previous validation execution
         if (validationCancellationTokenSource) {
             validationCancellationTokenSource.cancel();
             validationCancellationTokenSource.dispose();
         }
-        // Create a new cancellation token for this typing pass
         validationCancellationTokenSource = new vscode.CancellationTokenSource();
         const token = validationCancellationTokenSource.token;
-        // Debounce for 300ms
         validationTimeout = setTimeout(async () => {
             try {
                 await frankValidator.validate(document, token);
@@ -67,37 +66,64 @@ async function activate(context) {
             }
         }, 300);
     };
-    // Register hints
-    frankRenameHintProvider.register(context);
-    context.subscriptions.push(vscode.languages.registerDefinitionProvider(documentSelector, sessionKeyProvider), vscode.languages.registerReferenceProvider(documentSelector, pipeReferenceProvider), vscode.window.registerWebviewViewProvider('flowView', flowViewProvider), vscode.languages.registerRenameProvider({ language: 'xml' }, new masterRenameProvider_1.MasterRenameProvider()));
+    if (config.get('enableRename')) {
+        frankRenameHintProvider.register(context);
+        context.subscriptions.push(vscode.languages.registerRenameProvider({ language: 'xml' }, new masterRenameProvider_1.MasterRenameProvider()));
+    }
+    if (config.get('enableGoToDefinition')) {
+        context.subscriptions.push(vscode.languages.registerDefinitionProvider(documentSelector, sessionKeyProvider));
+    }
+    if (config.get('enableFindReferences')) {
+        context.subscriptions.push(vscode.languages.registerReferenceProvider(documentSelector, pipeReferenceProvider));
+    }
+    if (config.get('enableFlowVisualization')) {
+        context.subscriptions.push(vscode.window.registerWebviewViewProvider('flowView', flowViewProvider));
+    }
     // Init start view
     const startTreeView = vscode.window.createTreeView("startTreeView", {
         treeDataProvider: startTreeProvider
     });
     // Init snippets view
-    vscode.window.createTreeView("snippetsTreeView", {
-        treeDataProvider: snippetsTreeProvider,
-        dragAndDropController: snippetsDndController
-    });
+    if (config.get('enableSnippets')) {
+        vscode.window.createTreeView("snippetsTreeView", {
+            treeDataProvider: snippetsTreeProvider,
+            dragAndDropController: snippetsDndController
+        });
+    }
     context.subscriptions.push(vscode.workspace.onDidSaveTextDocument(async (doc) => {
         if (doc.languageId === 'xml') {
             await configurationIndex.updateFile(doc.uri);
-            vscode.workspace.textDocuments.forEach(openDoc => {
-                triggerValidation(openDoc);
-            });
-            flowViewProvider.updateWebview();
+            if (config.get('enableValidation')) {
+                vscode.workspace.textDocuments.forEach(openDoc => {
+                    if (openDoc.languageId === 'xml') {
+                        triggerValidation(openDoc);
+                    }
+                });
+            }
+            if (config.get('enableFlowVisualization')) {
+                flowViewProvider.updateWebview();
+            }
         }
     }), vscode.workspace.onDidDeleteFiles(event => {
         event.files.forEach(uri => configurationIndex.removeFile(uri));
     }), vscode.workspace.onDidChangeTextDocument(e => {
-        triggerValidation(e.document);
+        if (e.document.languageId === 'xml' && config.get('enableValidation')) {
+            triggerValidation(e.document);
+        }
     }), vscode.workspace.onDidCloseTextDocument(doc => frankValidator.clear(doc)), vscode.window.onDidChangeActiveTextEditor(() => {
         setStartTreeViewDescription();
-        flowViewProvider.updateWebview();
+        if (config.get('enableFlowVisualization')) {
+            flowViewProvider.updateWebview();
+        }
+    }), vscode.workspace.onDidChangeConfiguration(e => {
+        if (e.affectsConfiguration('frank')) {
+            vscode.window.showInformationMessage('Frank!Framework settings changed. Reload the window to apply.', 'Reload Window').then(selection => {
+                if (selection === 'Reload Window') {
+                    vscode.commands.executeCommand('workbench.action.reloadWindow');
+                }
+            });
+        }
     }));
-    if (vscode.window.activeTextEditor && vscode.window.activeTextEditor.document.languageId === 'xml') {
-        triggerValidation(vscode.window.activeTextEditor.document);
-    }
     // Load components.json once — used by the document link provider
     try {
         const componentsPath = context.asAbsolutePath('./resources/components.json');
@@ -147,40 +173,42 @@ async function activate(context) {
         startTreeProvider.rebuild();
         startTreeProvider.refresh();
     });
-    vscode.commands.registerCommand('frank.addNewCategoryOfUserSnippets', () => {
-        snippetsService.addNewCategoryOfUserSnippets(snippetsTreeProvider);
-    });
-    vscode.commands.registerCommand("frank.deleteAllUserSnippetByCategory", (item) => {
-        snippetsService.deleteAllUserSnippetByCategory(item.label);
-        snippetsTreeProvider.rebuild();
-        snippetsTreeProvider.refresh();
-    });
-    vscode.commands.registerCommand('frank.showUserSnippetsViewPerCategory', (category) => {
-        (0, usersnippets_view_1.showSnippetsView)(context, category, snippetsTreeProvider, snippetsService);
-    });
-    vscode.commands.registerCommand("frank.editUserSnippet", (item) => {
-        (0, usersnippets_view_1.showSnippetsView)(context, item.category, snippetsTreeProvider, snippetsService);
-    });
-    vscode.commands.registerCommand("frank.deleteUserSnippet", (item) => {
-        snippetsService.deleteUserSnippet(item.category, item.index);
-        snippetsTreeProvider.rebuild();
-        snippetsTreeProvider.refresh();
-    });
-    vscode.commands.registerCommand("frank.insertSnippet", async function (body) {
-        const editor = vscode.window.activeTextEditor;
-        if (!editor) {
-            vscode.window.showErrorMessage("No active editor");
-        }
-        else {
-            await editor.edit(editBuilder => {
-                editBuilder.insert(editor.selection.active, body);
-            });
-        }
-    });
-    vscode.commands.registerCommand('frank.addNewUserSnippet', async function () {
-        await snippetsService.addNewUserSnippet(snippetsTreeProvider);
-        vscode.window.showInformationMessage("Snippet added!");
-    });
+    if (config.get('enableSnippets')) {
+        vscode.commands.registerCommand('frank.addNewCategoryOfUserSnippets', () => {
+            snippetsService.addNewCategoryOfUserSnippets(snippetsTreeProvider);
+        });
+        vscode.commands.registerCommand("frank.deleteAllUserSnippetByCategory", (item) => {
+            snippetsService.deleteAllUserSnippetByCategory(item.label);
+            snippetsTreeProvider.rebuild();
+            snippetsTreeProvider.refresh();
+        });
+        vscode.commands.registerCommand('frank.showUserSnippetsViewPerCategory', (category) => {
+            (0, usersnippets_view_1.showSnippetsView)(context, category, snippetsTreeProvider, snippetsService);
+        });
+        vscode.commands.registerCommand("frank.editUserSnippet", (item) => {
+            (0, usersnippets_view_1.showSnippetsView)(context, item.category, snippetsTreeProvider, snippetsService);
+        });
+        vscode.commands.registerCommand("frank.deleteUserSnippet", (item) => {
+            snippetsService.deleteUserSnippet(item.category, item.index);
+            snippetsTreeProvider.rebuild();
+            snippetsTreeProvider.refresh();
+        });
+        vscode.commands.registerCommand("frank.insertSnippet", async function (body) {
+            const editor = vscode.window.activeTextEditor;
+            if (!editor) {
+                vscode.window.showErrorMessage("No active editor");
+            }
+            else {
+                await editor.edit(editBuilder => {
+                    editBuilder.insert(editor.selection.active, body);
+                });
+            }
+        });
+        vscode.commands.registerCommand('frank.addNewUserSnippet', async function () {
+            await snippetsService.addNewUserSnippet(snippetsTreeProvider);
+            vscode.window.showInformationMessage("Snippet added!");
+        });
+    }
     async function copyDir(source, target) {
         await vscode.workspace.fs.createDirectory(target);
         const entries = await vscode.workspace.fs.readDirectory(source);
@@ -203,7 +231,7 @@ async function activate(context) {
     }
     async function startHandler(item, isCurrent) {
         const editor = vscode.window.activeTextEditor;
-        if (editor && editor.document.languageId === 'xml') {
+        if (config.get('enableValidation') && editor && editor.document.languageId === 'xml') {
             frankValidator.validate(editor.document);
             const diagnostics = diagnosticCollection.get(editor.document.uri);
             const hasErrors = diagnostics && diagnostics.some(d => d.severity === vscode.DiagnosticSeverity.Error);
@@ -232,35 +260,41 @@ async function activate(context) {
             });
         });
     }
-    vscode.languages.registerDocumentLinkProvider({ language: 'xml', scheme: 'file' }, {
-        provideDocumentLinks(document, token) {
-            const links = [];
-            const text = document.getText();
-            const regex = /\w+/g;
-            let match;
-            while ((match = regex.exec(text)) !== null) {
-                if (token.isCancellationRequested)
-                    break;
-                targetLoop: for (const i in targets) {
-                    for (const j in targets[i]) {
-                        if (targets[i][j].includes(match[0])) {
-                            const start = document.positionAt(match.index);
-                            const end = document.positionAt(match.index + match[0].length);
-                            links.push(new vscode.DocumentLink(new vscode.Range(start, end), vscode.Uri.parse(`https://frankdoc.frankframework.org/#/${i}/${j}/${match[0]}`)));
-                            break targetLoop;
+    if (config.get('enableDocumentLinks')) {
+        context.subscriptions.push(vscode.languages.registerDocumentLinkProvider({ language: 'xml', scheme: 'file' }, {
+            provideDocumentLinks(document, token) {
+                const links = [];
+                const text = document.getText();
+                const regex = /\w+/g;
+                let match;
+                while ((match = regex.exec(text)) !== null) {
+                    if (token.isCancellationRequested)
+                        break;
+                    targetLoop: for (const i in targets) {
+                        for (const j in targets[i]) {
+                            if (targets[i][j].includes(match[0])) {
+                                const start = document.positionAt(match.index);
+                                const end = document.positionAt(match.index + match[0].length);
+                                links.push(new vscode.DocumentLink(new vscode.Range(start, end), vscode.Uri.parse(`https://frankdoc.frankframework.org/#/${i}/${j}/${match[0]}`)));
+                                break targetLoop;
+                            }
                         }
                     }
                 }
+                return links;
             }
-            return links;
-        }
-    });
+        }));
+    }
     // Execute Startup Actions
     setStartTreeViewDescription();
-    snippetsService.ensureSnippetsFilesExists();
-    snippetsService.loadFrankFrameworkSnippets();
-    vscode.commands.executeCommand("workbench.view.extension.flowViewContainer");
-    if (vscode.window.activeTextEditor && vscode.window.activeTextEditor.document.languageId === 'xml') {
+    if (config.get('enableSnippets')) {
+        snippetsService.ensureSnippetsFilesExists();
+        snippetsService.loadFrankFrameworkSnippets();
+    }
+    if (config.get('enableFlowVisualization')) {
+        vscode.commands.executeCommand("workbench.view.extension.flowViewContainer");
+    }
+    if (config.get('enableValidation') && vscode.window.activeTextEditor && vscode.window.activeTextEditor.document.languageId === 'xml') {
         frankValidator.validate(vscode.window.activeTextEditor.document);
     }
 }
