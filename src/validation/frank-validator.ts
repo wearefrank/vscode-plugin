@@ -157,12 +157,14 @@ export class FrankValidator {
         }
     }
 
+    private static readonly BUILT_IN_EXITS = new Set(['READY', 'exception', 'timeout']);
+
     private validatePipelines(xmlDoc: Document, document: vscode.TextDocument, diagnostics: vscode.Diagnostic[]) {
         const pipelines = xmlDoc.getElementsByTagName('Pipeline');
 
         for (let i = 0; i < pipelines.length; i++) {
             const pipeline = pipelines[i];
-            const validTargets = new Set<string>();
+            const validTargets = new Set<string>(FrankValidator.BUILT_IN_EXITS);
 
             const allElements = pipeline.getElementsByTagName('*');
             for (let j = 0; j < allElements.length; j++) {

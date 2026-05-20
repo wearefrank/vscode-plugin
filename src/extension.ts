@@ -143,6 +143,12 @@ export async function activate(context: vscode.ExtensionContext) {
             }
         }),
 
+        vscode.workspace.onDidOpenTextDocument(doc => {
+            if (doc.languageId === 'xml' && config.get('enableValidation')) {
+                triggerValidation(doc);
+            }
+        }),
+
         vscode.workspace.onDidCloseTextDocument(doc => frankValidator.clear(doc)),
 
         vscode.window.onDidChangeActiveTextEditor(() => {
