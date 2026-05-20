@@ -13,15 +13,15 @@
     "url": "https://github.com/wearefrank/vscode-plugin.git"
   },
   "engines": {
-    "vscode": "^1.107.0"
+    "vscode": "^1.109.0"
   },
   "categories": [
     "Other"
   ],
   "activationEvents": [
-    "*"
+    "onLanguage:xml"
   ],
-  "main": "./src/extension.js",
+  "main": "./out/extension.js",
   "contributes": {
     "walkthroughs": [
       {
@@ -41,7 +41,7 @@
           {
             "id": "start",
             "title": "Run Your Project",
-            "description": "Run your project using Ant, Docker, or Docker Compose from the Frank!Start view in the Explorer. At the top you'll see the project of the document currently open in your editor, choose your start method and hover over it to reveal the button to run it.",
+            "description": "Run your project using Ant or Docker Compose from the Frank!Start view in the Explorer. At the top you'll see the project of the document currently open in your editor, choose your start method and hover over it to reveal the button to run it.",
             "media": {
               "image": "resources/images/start.png",
               "altText": "Run a Frank Project"
@@ -149,6 +149,11 @@
           "command": "frank.addNewCategoryOfUserSnippets",
           "when": "view == snippetsTreeView",
           "group": "navigation"
+        },
+        {
+          "command": "frank.createNewFrank",
+          "when": "view == startTreeView",
+          "group": "navigation"
         }
       ],
       "view/item/context": [
@@ -164,34 +169,31 @@
         },
         {
           "command": "frank.startCurrent",
-          "when": "view == startTreeView && (viewItem == startTreeItem-ant || viewItem == startTreeItem-docker || viewItem == startTreeItem-dockerCompose)",
+          "when": "view == startTreeView && (viewItem == startTreeItem-ant ||  viewItem == startTreeItem-dockerCompose)",
           "group": "inline@2"
         },
         {
           "command": "frank.startProject",
-          "when": "view == startTreeView && (viewItem == projectTreeItem-ant || viewItem == projectTreeItem-docker || viewItem == projectTreeItem-dockerCompose)",
+          "when": "view == startTreeView && (viewItem == projectTreeItem-ant ||  viewItem == projectTreeItem-dockerCompose)",
           "group": "inline@3"
         },
         {
           "command": "frank.toggleUpdate",
           "when": "view == startTreeView && (viewItem == projectTreeItem-ant || viewItem == startTreeItem-ant)",
           "group": "navigation"
-        },
-        {
-          "command": "frank.deleteProject",
-          "when": "view == startTreeView && (viewItem == projectTreeItem-ant || viewItem == projectTreeItem-docker || viewItem == projectTreeItem-dockerCompose)",
-          "group": "inline@2"
         }
       ]
     },
     "commands": [
       {
         "command": "frank.createNewFrank",
-        "title": "Create a Frank"
+        "title": "Create a Frank",
+        "icon": "$(add)"
       },
       {
         "command": "frank.addNewUserSnippet",
-        "title": "Add Frank! Snippet"
+        "title": "Add Frank! Snippet",
+        "icon": "$(add)"
       },
       {
         "command": "frank.editUserSnippet",
@@ -225,13 +227,8 @@
       },
       {
         "command": "frank.toggleUpdate",
-        "title": "Change FF! Version"
-      }
-      ,
-      {
-        "command": "frank.deleteProject",
-        "title": "Delete From List",
-        "icon": "$(trash)"
+        "title": "Change FF! Version",
+        "icon": "$(sync)"
       }
     ],
     "viewsContainers": {
@@ -255,51 +252,114 @@
         {
           "id": "flowView",
           "name": "Flow",
-          "type": "webview"
+          "type": "webview",
+          "icon": "$(symbol-icon)",
+          "when": "config.frank.enableFlowVisualization"
         }
       ],
       "welcomeViewContainer": [
         {
           "id": "welcomeView",
-          "name": "Frank!Framework"
-        }
-      ],
-      "explorer": [
+          "name": "Frank!Framework",
+          "icon": "$(home)",
+          "when": "workspaceFolderCount == 0"
+        },
         {
           "id": "startTreeView",
-          "name": "Frank!Start"
+          "name": "Frank!Start",
+          "icon": "$(run)",
+          "when": "workspaceFolderCount > 0"
         },
         {
           "id": "snippetsTreeView",
-          "name": "Frank!Snippets"
+          "name": "Frank!Snippets",
+          "icon": "$(symbol-snippet)",
+          "when": "config.frank.enableSnippets && workspaceFolderCount > 0"
         }
       ]
+    },
+    "configuration": {
+      "title": "Frank!Framework",
+      "properties": {
+        "frank.enableValidation": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable real-time XML validation for Frank configurations."
+        },
+        "frank.enableFlowVisualization": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable the flow chart visualization in the secondary sidebar."
+        },
+        "frank.enableSnippets": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable Frank!Snippets: loading and suggesting snippets from the Frank!Framework wiki."
+        },
+        "frank.enableGoToDefinition": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable go-to-definition for sessionKey attributes."
+        },
+        "frank.enableFindReferences": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable find references for pipe names."
+        },
+        "frank.enableRename": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable rename support for pipe names and session keys."
+        },
+        "frank.enableDocumentLinks": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable Frank!Doc hyperlinks for component names in XML files."
+        }
+      }
     },
     "viewsWelcome": [
       {
         "view": "welcomeView",
-        "contents": "Welcome to the Frank!Framework!\nThe Frank!Framework is an easy-to-use, stateless integration framework which allows (transactional) messages to be modified and exchanged between different systems.\n[Open a Frank](command:vscode.openFolder)\n[Create a Frank](command:frank.createNewFrank)\nFor an introduction:\n [Open Walkthrough](command:frank.openWalkthrough)"
+        "contents": "Welcome to the Frank!Framework!\nThe Frank!Framework is an easy-to-use, stateless integration framework which allows (transactional) messages to be modified and exchanged between different systems.\n[Open a Frank](command:vscode.openFolder)\n[Create a Frank](command:frank.createNewFrank)\nFor an introduction:\n [Open Walkthrough](command:frank.openWalkthrough)",
+        "when": "workspaceFolderCount == 0"
       }
     ]
   },
   "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./ && npm run build:webview",
+    "build:webview": "node esbuild.webview.mjs",
+    "watch": "tsc -watch -p ./",
+    "watch:webview": "node esbuild.webview.mjs --watch",
     "lint": "eslint .",
     "pretest": "npm run lint",
     "test": "vscode-test"
   },
   "devDependencies": {
+    "@types/he": "^1.2.3",
     "@types/mocha": "^10.0.10",
-    "@types/node": "22.x",
-    "@types/vscode": "^1.104.0",
+    "@types/node": "^22.19.13",
+    "@types/react": "^18.3.12",
+    "@types/react-dom": "^18.3.1",
+    "@types/vscode": "^1.109.0",
+    "@typescript-eslint/eslint-plugin": "^8.56.1",
     "@vscode/test-cli": "^0.0.11",
     "@vscode/test-electron": "^2.5.2",
-    "eslint": "^9.34.0"
+    "esbuild": "^0.24.0",
+    "eslint": "^9.34.0",
+    "typescript": "^5.9.3"
   },
   "dependencies": {
     "@frankframework/frank-config-layout": "^1.2.4",
     "@xmldom/xmldom": "^0.8.11",
+    "fontoxpath": "^3.34.0",
     "he": "^1.2.0",
     "jsdom": "^27.3.0",
+    "jsonpath-plus": "^10.4.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "reactflow": "^11.11.4",
     "saxon-js": "2.5",
     "svg-pan-zoom": "^3.6.2",
     "xml-formatter": "^3.6.7"
