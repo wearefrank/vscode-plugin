@@ -86,7 +86,7 @@ suite('PipeReferenceProvider Test Suite', () => {
     });
 
     test('provideReferences - returns empty array for an untracked attribute', async () => {
-        // className is not one of name/path/firstPipe/nextPipe
+        // className is not one of name/path/firstPipe
         const doc = createMockDocument(`<Pipe className="EchoPipe" />`);
         const position = new vscode.Position(0, 17);
 

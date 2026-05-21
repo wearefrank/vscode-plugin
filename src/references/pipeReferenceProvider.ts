@@ -9,7 +9,7 @@ export class PipeReferenceProvider implements vscode.ReferenceProvider {
     ): Promise<vscode.Location[]> {
 
         const lineText = document.lineAt(position.line).text;
-        const attributeRegex = /(?:name|path|firstPipe|nextPipe)="([^"]*)"/g;
+        const attributeRegex = /(?:name|path|firstPipe)="([^"]*)"/g;
         let match;
         let pipeName: string | null = null;
 
@@ -51,7 +51,7 @@ export class PipeReferenceProvider implements vscode.ReferenceProvider {
 
         const pipelineText = fullText.substring(pipelineStart, pipelineEnd);
 
-        const searchRegex = new RegExp(`\\b(?:name|path|firstPipe|nextPipe)="(${escapedPipeName})"`, 'g');
+        const searchRegex = new RegExp(`\\b(?:name|path|firstPipe)="(${escapedPipeName})"`, 'g');
         let blockMatch;
 
         while ((blockMatch = searchRegex.exec(pipelineText)) !== null) {
