@@ -1,4 +1,3 @@
-import React from 'react';
 import { NodeProps } from 'reactflow';
 
 export interface FrankNodeData {

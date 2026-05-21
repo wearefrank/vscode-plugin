@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import ReactFlow, {
   Background,
@@ -7,7 +7,6 @@ import ReactFlow, {
   NodeMouseHandler,
   ReactFlowProvider,
 } from 'reactflow';
-import 'reactflow/dist/style.css';
 import FrankNode, { FrankNodeData } from './FrankNode';
 import EdgeLayer, { EdgeLayerData } from './EdgeLayer';
 import type { FlowGraph } from '../layout-builder';

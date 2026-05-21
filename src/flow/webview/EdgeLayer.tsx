@@ -1,4 +1,3 @@
-import React from 'react';
 import { NodeProps } from 'reactflow';
 import type { FlowSegment, FlowLabel } from '../layout-builder';
 
