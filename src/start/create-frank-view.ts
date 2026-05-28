@@ -201,6 +201,10 @@ async function handleSkeletonSubmit(
     targetProjectDir: string
 ): Promise<void> {
     // STEP 1: Clone the frank-skeleton repo into the target directory
+    if (!/^[\w.-]+$/.test(frankName)) {
+        panel.webview.postMessage({ command: 'error', message: 'Frank Name may only contain letters, numbers, hyphens, underscores, and dots.' });
+        return;
+    }
     try {
         await execAsync(`git clone https://github.com/wearefrank/skeleton.git "${frankName}"`, rootDir);
     } catch (error) {
@@ -239,6 +243,10 @@ async function handleSkeletonSubmit(
     });
 }
 
+// WARNING: exec passes the command string to the shell for interpretation.
+// Never interpolate unsanitized user input — doing so can lead to remote code execution.
+// Callers must either use hardcoded strings or sanitize all user-supplied values first.
+// For untrusted input, prefer child_process.spawn with an explicit argument array instead.
 function execAsync(command: string, cwd: string): Promise<string> {
     return new Promise((resolve, reject) => {
         exec(command, { cwd }, (error, stdout, stderr) => {
