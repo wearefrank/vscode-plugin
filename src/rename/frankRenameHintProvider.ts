@@ -3,7 +3,7 @@ import * as vscode from 'vscode';
 export class FrankRenameHintProvider {
     private hintDecorationType = vscode.window.createTextEditorDecorationType({
         after: {
-            contentText: ' Press F2 to rename',
+            contentText: 'Press F2 to rename',
             color: new vscode.ThemeColor('editorGhostText.foreground'),
             margin: '0 0 0 5px',
             fontStyle: 'italic'
