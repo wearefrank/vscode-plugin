@@ -10,7 +10,7 @@
 
 ### Configuration Flow Visualization
 
-The secondary sidebar automatically opens a live flowchart of the Frank configuration currently open in your editor. It updates on every save and document change, giving you an instant visual overview of your pipeline.
+The secondary sidebar automatically opens a live flowchart of the Frank configuration currently open in your editor. It updates on every save and document change, giving you an instant visual overview of your pipeline. Click any node in the flow to jump directly to that pipe or adapter in the editor. Use the zoom controls in the bottom-left corner or the scrollwheel to zoom in, zoom out, or fit the diagram to screen.
 
 ![Flow visualization screenshot](resources/images/flow.png)
 
@@ -66,9 +66,17 @@ Right-click a project in the Frank!Start view to manage the Frank!Framework vers
 
 ### Create a New Frank Project
 
-The Frank!Framework view in the Activity Bar gives you quick access to create a new Frank project. Choose **Simple Frank** to generate a ready-to-use project structure in your workspace, or select one of the other options to be directed to the relevant documentation.
+Click the **+** button in the Frank!Start view header to start creating a new Frank project.
 
-![Create project screenshot](resources/images/createfrank.png)
+![Create button screenshot](resources/images/createbutton.png)
+
+A picker appears where you can choose the project type. Select **Simple Frank** to generate a ready-to-use project structure in your workspace, or select one of the other options to be directed to the relevant documentation.
+
+![Create project picker screenshot](resources/images/createfrank.png)
+
+After selecting **Simple Frank**, a form opens where you set the project name, root directory, and one or more configuration names. Check **Generate boilerplate files** to have the extension create starter XSL, XSD, datasource, and JSON schema files in each configuration's subfolders, or leave it unchecked to start with an empty structure.
+
+![Create Frank form screenshot](resources/images/create_frank_view.png)
 
 ---
 
