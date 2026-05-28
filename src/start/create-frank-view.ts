@@ -6,20 +6,6 @@ import { exec } from 'child_process';
 // Nested subfolder paths created inside each configuration directory
 const CONFIG_SUBFOLDERS = ['XML/XSL', 'XML/XSD', 'JSON/ds', 'JSON/jsonschema'];
 
-const CONFIGURATION_XML = `<Configuration
-\txmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-\txsi:noNamespaceSchemaLocation="../FrankConfig.xsd"
-\t>
-\t<Adapter name="Adapter1a">
-\t\t<Receiver name="Receiver1a">
-\t\t\t<ApiListener name="Listener1a" uriPattern="service1a"/>
-\t\t</Receiver>
-\t\t<Pipeline>
-\t\t\t<EchoPipe name="HelloWorld" getInputFromFixedValue="Hello World!"/>
-\t\t</Pipeline>
-\t</Adapter>
-</Configuration>`;
-
 // Boilerplate starter files written into each subfolder when the option is enabled
 const BOILERPLATE_FILES: Record<string, string> = {
     'XML/XSL/example.xsl': `<?xml version="1.0" encoding="UTF-8"?>
@@ -156,7 +142,7 @@ async function handleSimpleSubmit(
     for (const configName of configurations) {
         const configDir = path.join(configurationsDir, configName);
         fs.mkdirSync(configDir);
-        fs.writeFileSync(path.join(configDir, 'Configuration.xml'), CONFIGURATION_XML, 'utf8');
+        fs.copyFileSync(path.join(templateDir, 'configurations', 'configName', 'Configuration.xml'), path.join(configDir, 'Configuration.xml'));
 
         for (const subfolder of CONFIG_SUBFOLDERS) {
             fs.mkdirSync(path.join(configDir, subfolder), { recursive: true });
