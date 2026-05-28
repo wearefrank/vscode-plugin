@@ -37,17 +37,25 @@ export class SessionKeyDefinitionProvider implements vscode.DefinitionProvider {
 
                     // Each parallel task needs its own regex instance to avoid shared lastIndex state
                     const regex = new RegExp(regexSource, 'g');
-                    let match;
-                    let doc: vscode.TextDocument | null = null;
 
-                    while ((match = regex.exec(fileText)) !== null) {
-                        // only open document on match — positionAt without slowing the IDE
-                        if (!doc) {
-                            doc = await vscode.workspace.openTextDocument(fileUri);
+                    // Precompute line offsets once so positionAt never needs openTextDocument
+                    const lineOffsets: number[] = [0];
+                    for (let j = 0; j < fileText.length; j++) {
+                        if (fileText[j] === '\n') lineOffsets.push(j + 1);
+                    }
+                    const positionAt = (offset: number): vscode.Position => {
+                        let lo = 0, hi = lineOffsets.length - 1;
+                        while (lo < hi) {
+                            const mid = Math.ceil((lo + hi) / 2);
+                            if (lineOffsets[mid] <= offset) lo = mid; else hi = mid - 1;
                         }
+                        return new vscode.Position(lo, offset - lineOffsets[lo]);
+                    };
 
-                        const startPos = doc.positionAt(match.index);
-                        const endPos = doc.positionAt(match.index + match[0].length);
+                    let match;
+                    while ((match = regex.exec(fileText)) !== null) {
+                        const startPos = positionAt(match.index);
+                        const endPos = positionAt(match.index + match[0].length);
 
                         // Check if the found definition isn't the exact place we already clicked
                         if (fileUri.fsPath !== document.uri.fsPath || startPos.line !== position.line) {
