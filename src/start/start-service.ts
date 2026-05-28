@@ -1,12 +1,17 @@
 import * as vscode from 'vscode';
-import * as fs from 'fs';
+import { promises as fsp } from 'fs';
+import * as fs from 'fs'; // kept for ffVersionSet / updateStrategySet / getSetFFVersion (called from sync constructor)
 import * as path from 'path';
-import { execSync } from 'child_process';
+import { exec } from 'child_process';
 
 class StartService {
     context: vscode.ExtensionContext;
     constructor(context: vscode.ExtensionContext) {
         this.context = context;
+    }
+
+    private async exists(p: string): Promise<boolean> {
+        try { await fsp.access(p); return true; } catch { return false; }
     }
 
     async discoverAntProjects(): Promise<string[]> {
@@ -37,10 +42,10 @@ class StartService {
         return Array.from(projectRoots);
     }
 
-    detectConfigurationsDir(projectRoot: string): string {
+    async detectConfigurationsDir(projectRoot: string): Promise<string> {
         const candidates = ['src/main/configurations', 'configurations'];
         for (const candidate of candidates) {
-            if (fs.existsSync(path.join(projectRoot, candidate))) {
+            if (await this.exists(path.join(projectRoot, candidate))) {
                 return candidate;
             }
         }
@@ -52,7 +57,7 @@ class StartService {
 
         while (true) {
             const potentialRunnerPath = path.join(currentDir, 'frank-runner');
-            if (fs.existsSync(potentialRunnerPath)) {
+            if (await this.exists(potentialRunnerPath)) {
                 return potentialRunnerPath;
             }
 
@@ -76,14 +81,14 @@ class StartService {
     async createFile(targetDir: string, file: string): Promise<boolean> {
         const newFilePath = path.join(targetDir, file);
         const defaultFilePath = path.join(this.context.extensionPath, 'resources', file);
-        let content = fs.readFileSync(defaultFilePath, 'utf8');
+        let content = await fsp.readFile(defaultFilePath, 'utf8');
 
         if (file === 'docker-compose.yml') {
-            const configsDir = this.detectConfigurationsDir(targetDir);
+            const configsDir = await this.detectConfigurationsDir(targetDir);
             content = content.replace('{{CONFIGURATIONS_DIR}}', `./${configsDir}`);
         }
 
-        fs.writeFileSync(newFilePath, content, 'utf8');
+        await fsp.writeFile(newFilePath, content, 'utf8');
         return true;
     }
 
@@ -94,7 +99,7 @@ class StartService {
 
         let currentDir = path.dirname(editor.document.uri.fsPath);
         while (true) {
-            if (fs.existsSync(path.join(currentDir, 'build.xml'))) {
+            if (await this.exists(path.join(currentDir, 'build.xml'))) {
                 return currentDir;
             }
             const parentDir = path.dirname(currentDir);
@@ -112,8 +117,8 @@ class StartService {
         let currentDir = path.dirname(editor.document.uri.fsPath);
         while (true) {
             if (
-                fs.existsSync(path.join(currentDir, 'src', 'main', 'configurations')) ||
-                fs.existsSync(path.join(currentDir, 'configurations'))
+                await this.exists(path.join(currentDir, 'src', 'main', 'configurations')) ||
+                await this.exists(path.join(currentDir, 'configurations'))
             ) {
                 return currentDir;
             }
@@ -128,15 +133,13 @@ class StartService {
         return this.getAntWorkingDirectory();
     }
 
-    getComposeFile(dir: string): string | null {
+    async getComposeFile(dir: string): Promise<string | null> {
         const isComposeFile = (filename: string) =>
             filename.toLowerCase().includes("compose") &&
             (filename.endsWith(".yml") || filename.endsWith(".yaml"));
 
-        const files = fs.readdirSync(dir);
-        const composeFile = files.find(isComposeFile);
-
-        return composeFile ?? null;
+        const files = await fsp.readdir(dir);
+        return files.find(isComposeFile) ?? null;
     }
 
     isFrameworkFile(file: string) {
@@ -154,88 +157,79 @@ class StartService {
     async toggleUpdate(workingDir: string) {
         const FFOptions: string[] = [];
         FFOptions.push("Highest Online Version");
-        FFOptions.push("Highest Stable Online Version")
-        for (let file of this.getLocalFFVersions(workingDir)) {
-            FFOptions.push(file.version)
+        FFOptions.push("Highest Stable Online Version");
+        for (const file of await this.getLocalFFVersions(workingDir)) {
+            FFOptions.push(file.version);
         }
         const ffOption = await vscode.window.showQuickPick(FFOptions, {placeHolder: "Pick a FF! version"});
         if (!ffOption) return;
 
         const frankRunnerPropertiesFile = path.join(workingDir, "frank-runner.properties");
-
         let newLine = ` `;
 
         switch (ffOption) {
             case "Highest Online Version":
-                if (fs.existsSync(frankRunnerPropertiesFile)) {
-                    let frankRunnerProperties = fs.readFileSync(frankRunnerPropertiesFile, "utf8");
+                if (await this.exists(frankRunnerPropertiesFile)) {
+                    let frankRunnerProperties = await fsp.readFile(frankRunnerPropertiesFile, "utf8");
 
                     if (this.ffVersionSet(workingDir) || this.updateStrategySet(workingDir)) {
                         frankRunnerProperties = frankRunnerProperties
-                        .replace(/^\s*ff\.version=.*$/gm, "")
-                        .trim();
-
+                            .replace(/^\s*ff\.version=.*$/gm, "")
+                            .trim();
                         frankRunnerProperties = frankRunnerProperties
-                        .replace(/^\s*update\.strategy=.*$/gm, "")
-                        .trim();
-
-                        fs.writeFileSync(frankRunnerPropertiesFile, frankRunnerProperties, "utf8");
+                            .replace(/^\s*update\.strategy=.*$/gm, "")
+                            .trim();
+                        await fsp.writeFile(frankRunnerPropertiesFile, frankRunnerProperties, "utf8");
                     }
                 }
                 break;
             case "Highest Stable Online Version":
                 newLine = `\nupdate.strategy=stable`;
 
-                if (fs.existsSync(frankRunnerPropertiesFile)) {
-                    let frankRunnerProperties = fs.readFileSync(frankRunnerPropertiesFile, "utf8");
+                if (await this.exists(frankRunnerPropertiesFile)) {
+                    let frankRunnerProperties = await fsp.readFile(frankRunnerPropertiesFile, "utf8");
 
-                    if(!this.updateStrategySet(workingDir)) {
+                    if (!this.updateStrategySet(workingDir)) {
                         if (this.ffVersionSet(workingDir)) {
                             frankRunnerProperties = frankRunnerProperties
-                            .replace(/^\s*ff\.version=.*$/gm, "")
-                            .trim();
-
-                            fs.writeFileSync(frankRunnerPropertiesFile, frankRunnerProperties, "utf8");
-
-                            fs.appendFileSync(frankRunnerPropertiesFile, newLine, "utf8");
+                                .replace(/^\s*ff\.version=.*$/gm, "")
+                                .trim();
+                            await fsp.writeFile(frankRunnerPropertiesFile, frankRunnerProperties, "utf8");
+                            await fsp.appendFile(frankRunnerPropertiesFile, newLine, "utf8");
                         } else {
-                            fs.appendFileSync(frankRunnerPropertiesFile, newLine, "utf8");
+                            await fsp.appendFile(frankRunnerPropertiesFile, newLine, "utf8");
                         }
                     }
                 } else {
-                    fs.writeFileSync(frankRunnerPropertiesFile, newLine, "utf8");
+                    await fsp.writeFile(frankRunnerPropertiesFile, newLine, "utf8");
                 }
                 break;
             default:
                 newLine = `ff.version=${ffOption}`;
 
-                if (fs.existsSync(frankRunnerPropertiesFile)) {
-
-                    let frankRunnerProperties = fs.readFileSync(frankRunnerPropertiesFile, "utf8");
+                if (await this.exists(frankRunnerPropertiesFile)) {
+                    let frankRunnerProperties = await fsp.readFile(frankRunnerPropertiesFile, "utf8");
 
                     if (this.ffVersionSet(workingDir) || this.updateStrategySet(workingDir)) {
                         frankRunnerProperties = frankRunnerProperties
-                        .replace(/^\s*ff\.version=.*$/gm, "")
-                        .trim();
-
+                            .replace(/^\s*ff\.version=.*$/gm, "")
+                            .trim();
                         frankRunnerProperties = frankRunnerProperties
-                        .replace(/^\s*update\.strategy=.*$/gm, "")
-                        .trim();
-
-                        fs.writeFileSync(frankRunnerPropertiesFile, frankRunnerProperties, "utf8");
-
-                        fs.appendFileSync(frankRunnerPropertiesFile, "\n" + newLine, "utf8");
+                            .replace(/^\s*update\.strategy=.*$/gm, "")
+                            .trim();
+                        await fsp.writeFile(frankRunnerPropertiesFile, frankRunnerProperties, "utf8");
+                        await fsp.appendFile(frankRunnerPropertiesFile, "\n" + newLine, "utf8");
                     } else {
-                        fs.appendFileSync(frankRunnerPropertiesFile, "\n" + newLine, "utf8");
+                        await fsp.appendFile(frankRunnerPropertiesFile, "\n" + newLine, "utf8");
                     }
                 } else {
-                    fs.writeFileSync(frankRunnerPropertiesFile, newLine, "utf8");
+                    await fsp.writeFile(frankRunnerPropertiesFile, newLine, "utf8");
                 }
         }
     }
 
-    getLocalFFVersions(workingDir: string) {
-        let downloadDir;
+    async getLocalFFVersions(workingDir: string) {
+        let downloadDir: string;
 
         if (workingDir.includes(`frank-runner${path.sep}examples`)) {
             downloadDir = path.join(workingDir, "../../download");
@@ -243,33 +237,28 @@ class StartService {
             downloadDir = path.join(workingDir, "../frank-runner/download");
         }
 
-        if (!fs.existsSync(downloadDir)) return [];
+        if (!await this.exists(downloadDir)) return [];
 
         const versionRegex = /(\d+(?:\.\d+)*(?:-\d+\.\d+)?)/;
+        const files = await fsp.readdir(downloadDir);
 
-        return fs.readdirSync(downloadDir)
-            .filter(f =>
-                /^(frankframework|ibis).*\.war$/.test(f)
-            )
+        return files
+            .filter(f => /^(frankframework|ibis).*\.war$/.test(f))
             .map(f => {
                 const match = f.match(versionRegex);
-                return {
-                    file: f,
-                    version: match ? match[1] : ""
-                };
+                return { file: f, version: match ? match[1] : "" };
             })
             .filter(e => e.version);
     }
 
+    // The three methods below stay synchronous — they are called from the
+    // ProjectTreeItem constructor in start-tree-provider, which cannot be async.
     updateStrategySet(workingDir: string) {
         const frankRunnerPropertiesFile = path.join(workingDir, "frank-runner.properties");
 
         if (fs.existsSync(frankRunnerPropertiesFile)) {
-            let frankRunnerProperties = fs.readFileSync(frankRunnerPropertiesFile, "utf8");
-
-            const hasActiveStableStrategy = /^\s*update\.strategy=stable.*$/m.test(frankRunnerProperties);
-
-            return hasActiveStableStrategy;
+            const frankRunnerProperties = fs.readFileSync(frankRunnerPropertiesFile, "utf8");
+            return /^\s*update\.strategy=stable.*$/m.test(frankRunnerProperties);
         }
 
         return false;
@@ -279,11 +268,8 @@ class StartService {
         const frankRunnerPropertiesFile = path.join(workingDir, "frank-runner.properties");
 
         if (fs.existsSync(frankRunnerPropertiesFile)) {
-            let frankRunnerProperties = fs.readFileSync(frankRunnerPropertiesFile, "utf8");
-
-            const hasActiveFFVersion = /^\s*ff\.version=.*$/m.test(frankRunnerProperties);
-
-            return hasActiveFFVersion;
+            const frankRunnerProperties = fs.readFileSync(frankRunnerPropertiesFile, "utf8");
+            return /^\s*ff\.version=.*$/m.test(frankRunnerProperties);
         }
 
         return false;
@@ -293,52 +279,43 @@ class StartService {
         const frankRunnerPropertiesFile = path.join(workingDir, "frank-runner.properties");
 
         if (fs.existsSync(frankRunnerPropertiesFile)) {
-            let frankRunnerProperties = fs.readFileSync(frankRunnerPropertiesFile, "utf8");
-
+            const frankRunnerProperties = fs.readFileSync(frankRunnerPropertiesFile, "utf8");
             const match = frankRunnerProperties.match(/^\s*ff\.version=.*$/m);
-            const setFFversion = match ? match[0].split("=")[1] : "";
-
-            return setFFversion;
+            return match ? match[0].split("=")[1] : "";
         }
 
         return false;
     }
 
-    ensureRanProjectsFileExists(): void {
+    async ensureRanProjectsFileExists(): Promise<void> {
         const storageDir = this.context.globalStorageUri.fsPath;
         const ranProjectsPath = path.join(storageDir, 'ranProjects.json');
-        const ranProjectsBody = { ant: [], docker: [], dockerCompose: [] };
-        if (!fs.existsSync(storageDir)) {
-            fs.mkdirSync(storageDir, { recursive: true });
-        }
-        if (!fs.existsSync(ranProjectsPath)) {
-            fs.writeFileSync(ranProjectsPath, JSON.stringify(ranProjectsBody, null, 4), 'utf8');
+        await fsp.mkdir(storageDir, { recursive: true });
+        if (!await this.exists(ranProjectsPath)) {
+            await fsp.writeFile(ranProjectsPath, JSON.stringify({ ant: [], docker: [], dockerCompose: [] }, null, 4), 'utf8');
         }
     }
 
     async deleteRanProject(method: string, workingDir: string): Promise<void> {
         const ranProjectsPath = path.join(this.context.globalStorageUri.fsPath, 'ranProjects.json');
-        const ranProjectsJSON = JSON.parse(fs.readFileSync(ranProjectsPath, 'utf8'));
+        const ranProjectsJSON = JSON.parse(await fsp.readFile(ranProjectsPath, 'utf8'));
         ranProjectsJSON[method] = ranProjectsJSON[method].filter((p: { path: string }) => p.path !== workingDir);
-        fs.writeFileSync(ranProjectsPath, JSON.stringify(ranProjectsJSON, null, 4), 'utf8');
+        await fsp.writeFile(ranProjectsPath, JSON.stringify(ranProjectsJSON, null, 4), 'utf8');
     }
 
     async saveRanProject(method: string, workingDir: string): Promise<void> {
         const ranProjectsPath = path.join(this.context.globalStorageUri.fsPath, 'ranProjects.json');
-        const ranProjectsJSON = JSON.parse(fs.readFileSync(ranProjectsPath, 'utf8'));
+        const ranProjectsJSON = JSON.parse(await fsp.readFile(ranProjectsPath, 'utf8'));
         const alreadyExists = ranProjectsJSON[method].some((p: { path: string }) => p.path === workingDir);
         if (alreadyExists) return;
         ranProjectsJSON[method].push({ project: path.basename(workingDir), path: workingDir });
-        fs.writeFileSync(ranProjectsPath, JSON.stringify(ranProjectsJSON, null, 4), 'utf8');
+        await fsp.writeFile(ranProjectsPath, JSON.stringify(ranProjectsJSON, null, 4), 'utf8');
     }
 
-    private isDockerAvailable(): boolean {
-        try {
-            execSync('docker --version', { stdio: 'ignore' });
-            return true;
-        } catch {
-            return false;
-        }
+    private async isDockerAvailable(): Promise<boolean> {
+        return new Promise(resolve => {
+            exec('docker --version', (error) => resolve(!error));
+        });
     }
 
     async startWithAnt(workingDir: string | null | undefined, isCurrent: boolean) {
@@ -360,7 +337,7 @@ class StartService {
         // STEP 1: Verify the ant launch script exists before opening a terminal
         const antScript = process.platform === 'win32' ? 'ant.bat' : 'ant';
         const antScriptPath = path.join(runnerPath, antScript);
-        if (!fs.existsSync(antScriptPath)) {
+        if (!await this.exists(antScriptPath)) {
             vscode.window.showErrorMessage(`frank-runner found but '${antScript}' is missing. Ensure frank-runner is fully set up at: ${runnerPath}`);
             return;
         }
@@ -387,13 +364,13 @@ class StartService {
         }
 
         // STEP 1: Verify Docker is installed and reachable
-        if (!this.isDockerAvailable()) {
+        if (!await this.isDockerAvailable()) {
             vscode.window.showErrorMessage("Docker is not available. Ensure Docker Desktop is installed and running.");
             return;
         }
 
         // STEP 2: Find or generate docker-compose.yml at the project root
-        let composeFileName = this.getComposeFile(workingDir);
+        let composeFileName = await this.getComposeFile(workingDir);
         if (!composeFileName) {
             const choice = await vscode.window.showInformationMessage(
                 "No docker-compose file found in the project root. Would you like to generate one?",
