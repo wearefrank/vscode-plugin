@@ -248,6 +248,10 @@
 			<xsl:for-each select="descendant::sender[@className='org.frankframework.senders.IbisLocalSender']">
 				<xsl:call-template name="IbisLocalSender"/>
 			</xsl:for-each>
+			<!-- FrankSender is the modern replacement for IbisLocalSender; treat it the same way -->
+			<xsl:for-each select="descendant::sender[@className='org.frankframework.senders.FrankSender']">
+				<xsl:call-template name="FrankSender"/>
+			</xsl:for-each>
 			<!-- Add success forward if not present -->
 			<xsl:call-template name="createForwardIfNecessary">
 				<xsl:with-param name="forwards" select="forward"/>
@@ -325,6 +329,22 @@
 		</xsl:copy>
 
 		<xsl:variable name="targetReceiver" select="ancestor::*/adapter/receiver[listener[@className='org.frankframework.receivers.JavaListener' and @name=current()/@javaListener]]"/>
+		<xsl:if test="exists($targetReceiver)">
+			<xsl:element name="forward">
+				<xsl:attribute name="name" select="'differentAdapter'"/>
+				<xsl:attribute name="path" select="$targetReceiver/parent::adapter/@name"/>
+				<xsl:attribute name="targetID" select="generate-id($targetReceiver)"/>
+			</xsl:element>
+		</xsl:if>
+	</xsl:template>
+
+	<!-- FrankSender links to a FrankListener via the 'target' attribute (the adapter name) -->
+	<xsl:template name="FrankSender">
+		<xsl:copy>
+			<xsl:call-template name="defaultCopyActions"/>
+		</xsl:copy>
+
+		<xsl:variable name="targetReceiver" select="ancestor::*/adapter/receiver[listener[@className='org.frankframework.receivers.FrankListener' and @name=current()/@target]]"/>
 		<xsl:if test="exists($targetReceiver)">
 			<xsl:element name="forward">
 				<xsl:attribute name="name" select="'differentAdapter'"/>
@@ -658,16 +678,22 @@
 	</xsl:template>
 
 	<xsl:template match="forward" mode="convertForwards">
-		<xsl:text>	</xsl:text>
-		<xsl:value-of select="parent::*/@elementID"/>
-		<xsl:text> --> |</xsl:text>
-		<xsl:value-of select="@name"/>
-		<xsl:if test="exists(@customText)">
-			<xsl:text><![CDATA[<br/>]]></xsl:text>
-			<xsl:value-of select="@customText"/>
+		<!-- Skip forwards that could not be resolved to a target element. This happens when
+			 a forward's @path references a Frank element not present in uglify_lookup.xml,
+			 so canonicalize leaves it non-canonical and the XSL cannot assign it an elementID.
+			 Emitting an empty targetID would crash the layout library. -->
+		<xsl:if test="@targetID != '' and parent::*/@elementID != ''">
+			<xsl:text>	</xsl:text>
+			<xsl:value-of select="parent::*/@elementID"/>
+			<xsl:text> --> |</xsl:text>
+			<xsl:value-of select="@name"/>
+			<xsl:if test="exists(@customText)">
+				<xsl:text><![CDATA[<br/>]]></xsl:text>
+				<xsl:value-of select="@customText"/>
+			</xsl:if>
+			<xsl:text>| </xsl:text>
+			<xsl:value-of select="@targetID"/>
+			<xsl:text>&#10;</xsl:text>
 		</xsl:if>
-		<xsl:text>| </xsl:text>
-		<xsl:value-of select="@targetID"/>
-		<xsl:text>&#10;</xsl:text>
 	</xsl:template>
 </xsl:stylesheet>

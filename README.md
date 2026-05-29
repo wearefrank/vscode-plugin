@@ -1,19 +1,136 @@
-# Frank!Framework
-The Frank!Framework extension is meant to support developers when working with the Frank!Framework.
+<div align="center">
+  <img src="resources/images/android-chrome-192x192.png" alt="WeAreFrank! Logo" width="128" />
+  <h1>Frank!Framework</h1>
+  <p>A VS Code extension to help developers build Frank!Framework integrations faster.</p>
+</div>
+
+---
 
 ## Features
-* Open or create a new Frank. On the left of your window in the activity bar the Frank!Framework extension has its own view container, containing options to open or create a new Frank. When creating a new Frank, you will have to choose between a few options. Only the 'Simple Frank' option will generate a project structure in your workspace , the other options will forward you to the appropriate documentation.
-* Run a Frank. You can find the Frank!Start view in the explorer. When having a file of a specific Frank open in your editor, you will be able to run this Frank in the Frank!Start view. You can choose to run it with Ant, Docker or Docker Compose. If a build.xml/Dockerfile/compose file is not present in the Frank you're trying to run, you will be prompted to automatically add one.
-* Manage FF! version when running a Frank with Ant. You can manage what version of the FF! a Frank uses in the Frank!Start view. The current version of a Frank will be displayed besides its name, right click on the Frank to display the options. You can choose between the latest version, the latest stable version or a version already locally installed.
-* Configuration flowchart. The secondary sidebar with the Flowchart view container opens automatically and displays the flowchart of the configuration open in your editor. It updates on every save or document change.
-* Frank!Framework Wiki snippets. Examples on the Frank!Framework Wiki get loaded in as global user snippets. They are organized per component name. Just type the name of the component you want to insert, and choose from the list or hit enter.
-* User snippets. You can also make your own snippets by selecting text, right clicking and clicking on 'Add Frank! Snippet'. You will be asked to give the snippet a name. You can group snippets together by giving it the same name as an already existing one.
-* View snippets. You can finds the Frank!Snippets view in the explorer. It displays a tree of both Frank!Framework Wiki snippets and user snippets. Click a snippet in this list to insert it into your editor.
-* Manage user snippets. Also in the Frank!Snippets view you can manage your user snippets. Click on a group name to open the management window. At the top you will see the name, below that a form to add a new snippet to this group and below that all the snippets in the group. Here you can edit or remove existing snippets or add new ones. You can also choose to contribute to the Frank!Framework Wiki. Which just opens the (maybe already existing) Wiki file of this specific snippet group. Which will be committed and pushed its save.
-* Documentation. When working on a config, components which have a page in the Frank!Doc will be underlined. Ctrl click them to be forwarded to their page, for easy access to the documentation.
+
+### Configuration Flow Visualization
+
+The secondary sidebar automatically opens a live flowchart of the Frank configuration currently open in your editor. It updates on every save and document change, giving you an instant visual overview of your pipeline. Click any node in the flow to jump directly to that pipe or adapter in the editor. Use the zoom controls in the bottom-left corner or the scrollwheel to zoom in, zoom out, or fit the diagram to screen.
+
+![Flow visualization screenshot](resources/images/flow.png)
+
+---
+
+### Frank!Framework Wiki Snippets
+
+Snippets from the Frank!Framework Wiki are loaded as global suggestions, organized by component name. Start typing the name of the component you want to insert and select it from the autocomplete list.
+
+![Wiki snippets screenshot](resources/images/snippet.png)
+
+---
+
+### Create Custom Snippets
+
+Select any text in your editor, right-click, and choose **Add Frank! Snippet** to save it as a reusable snippet. Give it a name, or use the name of an existing group to add it to that group.
+
+![Create snippet screenshot](resources/images/createsnippet.png)
+
+---
+
+### View Snippets
+
+The **Frank!Snippets** view in the Explorer displays a tree of all Frank!Framework Wiki snippets and your own user snippets. Click any snippet to insert it directly into your editor.
+
+![View snippets screenshot](resources/images/viewsnippets.png)
+
+---
+
+### Manage User Snippets
+
+Click a snippet group name in the Frank!Snippets view to open the management panel. From there you can add new snippets to the group, edit existing ones, or delete them. You can also open the corresponding Frank!Framework Wiki file to contribute your snippet upstream.
+
+![Manage snippets screenshot](resources/images/managesnippets.png)
+
+---
+
+### Run a Frank Project
+
+The **Frank!Start** view in the Explorer lets you run a Frank project directly from VS Code. Open any file belonging to a Frank project and use the view to launch it with Ant or Docker Compose. If a `build.xml` or `docker-compose.yml` is missing, the extension offers to add one automatically.
+
+![Run project screenshot](resources/images/start.png)
+
+---
+
+### Manage Frank!Framework Version
+
+Right-click a project in the Frank!Start view to manage the Frank!Framework version it runs with. Choose between the latest version, the latest stable version, or a version already installed locally. The current version is displayed next to the project name.
+
+![Version toggle screenshot](resources/images/toggle.png)
+
+---
+
+### Create a New Frank Project
+
+Click the **+** button in the Frank!Start view header to start creating a new Frank project.
+
+![Create button screenshot](resources/images/createbutton.png)
+
+A picker appears where you can choose the project type. Select **Simple Frank** to generate a ready-to-use project structure in your workspace, or select one of the other options to be directed to the relevant documentation.
+
+![Create project picker screenshot](resources/images/createfrank.png)
+
+After selecting **Simple Frank**, a form opens where you set the project name, root directory, and one or more configuration names. Check **Generate boilerplate files** to have the extension create starter XSL, XSD, datasource, and JSON schema files in each configuration's subfolders, or leave it unchecked to start with an empty structure.
+
+![Create Frank form screenshot](resources/images/create_frank_view.png)
+
+---
+
+### Component Documentation Links
+
+Components in your Frank XML configuration that have a page in Frank!Doc are underlined. `Ctrl`+click any underlined component name to open its documentation page in your browser.
+
+![Documentation links screenshot](resources/images/documentation.png)
+
+---
+
+### Real-time XML Validation
+
+As you type, the extension validates your Frank XML configuration and reports errors and warnings directly in the editor via VS Code diagnostics. Validation covers pipeline structure, forward definitions, and XPath/JSONPath expressions used in your configuration. Validation runs with a 300ms debounce to stay out of your way while you type.
+
+---
+
+### Navigation: Go-to-Definition, Find References, and Rename
+
+- **Go-to-definition** — `F12` on a `sessionKey` attribute jumps to where that key is stored in the pipeline.
+- **Find references** — `Shift+F12` on a pipe name lists every place it is referenced across your configuration files.
+- **Rename** — `F2` on a pipe name renames it across the enclosing adapter. `F2` on a session key renames it across the entire workspace.
+
+---
+
+## Requirements
+
+- VS Code `1.109.0` or later
+- [Red Hat XML](https://marketplace.visualstudio.com/items?itemName=redhat.vscode-xml) extension — installed automatically as a dependency
+
+---
+
+## Configuration
+
+All features are enabled by default and can be toggled individually in your VS Code settings (`Ctrl`+`,`, search for `frank`). Alternatively you can find them under `Settings` -> `Extensions` -> `Frank!Framework`.
+
+| Setting | Default | Description |
+|---|---|---|
+| `frank.enableValidation` | `true` | Real-time XML validation with diagnostics |
+| `frank.enableFlowVisualization` | `true` | Flow chart in the secondary sidebar |
+| `frank.enableSnippets` | `true` | Frank!Framework Wiki snippet suggestions |
+| `frank.enableGoToDefinition` | `true` | Go-to-definition for `sessionKey` attributes |
+| `frank.enableFindReferences` | `true` | Find references for pipe names |
+| `frank.enableRename` | `true` | Rename support for pipe names and session keys |
+| `frank.enableDocumentLinks` | `true` | Frank!Doc hyperlinks for component names |
+
+---
 
 ## Installation
-Install the extension using VS Code's Extension Marketplace.
+
+Search for **Frank!Framework** in the VS Code Extension Marketplace and click **Install**, or install it from the [Marketplace page](https://marketplace.visualstudio.com/items?itemName=wearefrank.frank).
+
+---
 
 ## Contributing
-This project welcomes contributions and suggestions. Take a look at the vsc-extension-quickstart.md file to get started.
+
+Contributions and suggestions are welcome. Visit the [GitHub repository](https://github.com/wearefrank/vscode-plugin) to open an issue.

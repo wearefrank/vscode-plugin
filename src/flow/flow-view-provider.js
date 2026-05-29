@@ -1,159 +1,94 @@
-const vscode = require('vscode');
-const path = require('path');
-const fs = require('fs');
-const SaxonJS = require('saxon-js');
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const vscode = require("vscode");
+const path = require("path");
+const fs = require("fs");
+const SaxonJS = require("saxon-js");
 const frankLayout = require("@frankframework/frank-config-layout");
-const { JSDOM } = require("jsdom")
-
+const jsdom_1 = require("jsdom");
 class FlowViewProvider {
     constructor(context) {
-      this.context = context;
+        this.context = context;
     }
-
     resolveWebviewView(webviewView) {
-      this.webView = webviewView;
-      this.webView.webview.options = { enableScripts: true };
-
-      global.DOMParser = new JSDOM().window.DOMParser;
-      global.document = new JSDOM().window.document;
-
-      this.updateWebview();
+        this.webView = webviewView;
+        this.webView.webview.options = { enableScripts: true };
+        global.DOMParser = new jsdom_1.JSDOM().window.DOMParser;
+        global.document = new jsdom_1.JSDOM().window.document;
+        this.updateWebview();
     }
-
     async updateWebview() {
-      if (!this.webView) {
-        return;
-      }
-
-      const editor = vscode.window.activeTextEditor; 
-      
-      if (!editor) {
-        this.webView.webview.html = getOpenedWithEmptyEditorWebviewContent();
-        return;
-      }
-
-      const config = getCurrentConfiguration();
-
-      const parser = new DOMParser();
-      const xml = parser.parseFromString(config, "text/xml");
-
-      const parserErrors = xml.getElementsByTagName("parsererror");
-
-      if (parserErrors.length > 0) {
-          const error = parserErrors[0].textContent;
-          this.webView.webview.html = getErrorWebviewContent(error);
-          return;
-      }
-
-      const canonicalizeSef = convertXSLtoSEF(this.context, "canonicalize");
-
-      const canoncalizedXml = SaxonJS.transform({
-        stylesheetText: canonicalizeSef,
-        sourceText: config,
-        destination: "serialized"
-      });
-
-      const isAdapter = config.split("\n")[0].includes("adapter");
-
-      const mermaidSef = convertXSLtoSEF(
-        this.context,
-        isAdapter ? "adapter2mermaid" : "configuration2mermaid"
-      );
-
-      const paramsPath = path.join(this.context.extensionPath, "resources/flow/xml/params.xml");
-      const params = fs.readFileSync(paramsPath, 'utf8');
-      const paramsXdm = await SaxonJS.getResource({
-        type: "xml",
-        text: params
-      });
-
-      const mermaid = SaxonJS.transform({
-        stylesheetText: mermaidSef,
-        sourceText: canoncalizedXml.principalResult,
-        destination: "serialized",
-        stylesheetParams: {
-          frankElements: paramsXdm
+        if (!this.webView) {
+            return;
         }
-      });
-
-      const css = this.webView.webview.asWebviewUri(
-        vscode.Uri.joinPath(
-          this.context.extensionUri,
-          'resources',
-          'css',
-          'flow-view-webcontent.css'
-        )
-      );
-
-      const codiconCss = this.webView.webview.asWebviewUri(
-        vscode.Uri.joinPath(
-          this.context.extensionUri,
-          'resources',
-          'css',
-          'codicon.css'
-        )
-      );
-
-      const script = this.webView.webview.asWebviewUri(
-        vscode.Uri.joinPath(
-          this.context.extensionUri,
-          'src',
-          'flow',
-          'flow-view-script.js'
-        )
-      );
-
-      const zoomScript = this.webView.webview.asWebviewUri(
-        vscode.Uri.joinPath(
-          this.context.extensionUri,
-          'node_modules',
-          'svg-pan-zoom',
-          'dist',
-          'svg-pan-zoom.min.js'
-        )
-      );
-
-      try {
-        frankLayout.initMermaid2Svg(frankLayout.getFactoryDimensions());
-        const svg = await frankLayout.mermaid2svg(mermaid.principalResult);
-
-        this.webView.webview.html = getWebviewContent(svg, css, codiconCss, script, zoomScript);
-      } catch (err) {
-        this.webView.webview.html = getErrorWebviewContent("This file is not recognized as a Frank!Configuration");
-      }
+        const editor = vscode.window.activeTextEditor;
+        if (!editor) {
+            this.webView.webview.html = getOpenedWithEmptyEditorWebviewContent();
+            return;
+        }
+        const config = getCurrentConfiguration();
+        const parser = new DOMParser();
+        const xml = parser.parseFromString(config, "text/xml");
+        const parserErrors = xml.getElementsByTagName("parsererror");
+        if (parserErrors.length > 0) {
+            const error = parserErrors[0].textContent;
+            this.webView.webview.html = getErrorWebviewContent(error);
+            return;
+        }
+        const canonicalizeSef = convertXSLtoSEF(this.context, "canonicalize");
+        const canoncalizedXml = SaxonJS.transform({
+            stylesheetText: canonicalizeSef,
+            sourceText: config,
+            destination: "serialized"
+        });
+        const isAdapter = config.split("\n")[0].includes("adapter");
+        const mermaidSef = convertXSLtoSEF(this.context, isAdapter ? "adapter2mermaid" : "configuration2mermaid");
+        const paramsPath = path.join(this.context.extensionPath, "resources/flow/xml/params.xml");
+        const params = fs.readFileSync(paramsPath, 'utf8');
+        const paramsXdm = await SaxonJS.getResource({
+            type: "xml",
+            text: params
+        });
+        const mermaid = SaxonJS.transform({
+            stylesheetText: mermaidSef,
+            sourceText: canoncalizedXml.principalResult,
+            destination: "serialized",
+            stylesheetParams: {
+                frankElements: paramsXdm
+            }
+        });
+        const css = this.webView.webview.asWebviewUri(vscode.Uri.joinPath(this.context.extensionUri, 'resources', 'css', 'flow-view-webcontent.css'));
+        const codiconCss = this.webView.webview.asWebviewUri(vscode.Uri.joinPath(this.context.extensionUri, 'resources', 'css', 'codicon.css'));
+        const script = this.webView.webview.asWebviewUri(vscode.Uri.joinPath(this.context.extensionUri, 'src', 'flow', 'flow-view-script.js'));
+        const zoomScript = this.webView.webview.asWebviewUri(vscode.Uri.joinPath(this.context.extensionUri, 'node_modules', 'svg-pan-zoom', 'dist', 'svg-pan-zoom.min.js'));
+        try {
+            frankLayout.initMermaid2Svg(frankLayout.getFactoryDimensions());
+            const svg = await frankLayout.mermaid2svg(mermaid.principalResult);
+            this.webView.webview.html = getWebviewContent(svg, css, codiconCss, script, zoomScript);
+        }
+        catch {
+            this.webView.webview.html = getErrorWebviewContent("This file is not recognized as a Frank!Configuration");
+        }
     }
 }
-
+exports.default = FlowViewProvider;
 function convertXSLtoSEF(context, xsl) {
-  const xslPath = path.join(
-    context.extensionPath,
-    "resources/flow/xsl",
-    xsl + ".xsl"
-  );
-
-  const env = SaxonJS.getPlatform();
-  const doc = env.parseXmlFromString(env.readFile(xslPath));
-
-  const lookupDir = path.join(
-    context.extensionPath,
-    "resources/flow/xml"
-  ).replace(/\\/g, "/");
-  doc._saxonBaseUri = `file://${lookupDir}/`;
-
-  return JSON.stringify(SaxonJS.compile(doc));
+    const xslPath = path.join(context.extensionPath, "resources/flow/xsl", xsl + ".xsl");
+    const env = SaxonJS.getPlatform();
+    const doc = env.parseXmlFromString(env.readFile(xslPath));
+    const lookupDir = path.join(context.extensionPath, "resources/flow/xml").replace(/\\/g, "/");
+    doc._saxonBaseUri = `file://${lookupDir}/`;
+    return JSON.stringify(SaxonJS.compile(doc));
 }
-
-
 function getCurrentConfiguration() {
-  const editor = vscode.window.activeTextEditor;
-  if (!editor) {
-    return;
-  }
-  return editor.document.getText();
+    const editor = vscode.window.activeTextEditor;
+    if (!editor) {
+        return;
+    }
+    return editor.document.getText();
 }
-
 function getWebviewContent(svg, css, codiconCss, script, zoomScript) {
-  return `
+    return `
   <!DOCTYPE html>
   <html>
       <head>
@@ -178,7 +113,6 @@ function getWebviewContent(svg, css, codiconCss, script, zoomScript) {
   </html>
   `;
 }
-
 function getErrorWebviewContent(error) {
     return `
     <!DOCTYPE html>
@@ -208,7 +142,6 @@ function getErrorWebviewContent(error) {
     </html>
     `;
 }
-
 function getOpenedWithEmptyEditorWebviewContent() {
     return `
     <!DOCTYPE html>
@@ -237,5 +170,5 @@ function getOpenedWithEmptyEditorWebviewContent() {
     </html>
     `;
 }
-
-module.exports = FlowViewProvider;
+// Exported as default above
+//# sourceMappingURL=flow-view-provider.js.map

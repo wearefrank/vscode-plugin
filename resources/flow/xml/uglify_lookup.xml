@@ -35,6 +35,11 @@
     <ClassName>org.frankframework.receivers.FileRecordListener</ClassName>
   </Element>
   <Element>
+    <Name>FrankListener</Name>
+    <Type>listener</Type>
+    <ClassName>org.frankframework.receivers.FrankListener</ClassName>
+  </Element>
+  <Element>
     <Name>FtpListener</Name>
     <Type>listener</Type>
     <ClassName>org.frankframework.ftp.FtpListener</ClassName>
@@ -208,6 +213,11 @@
     <Name>FixedResultSender</Name>
     <Type>sender</Type>
     <ClassName>org.frankframework.senders.FixedResultSender</ClassName>
+  </Element>
+  <Element>
+    <Name>FrankSender</Name>
+    <Type>sender</Type>
+    <ClassName>org.frankframework.senders.FrankSender</ClassName>
   </Element>
   <Element>
     <Name>FtpFileSystemSender</Name>
@@ -523,6 +533,11 @@
     <Name>CsvParserPipe</Name>
     <Type>pipe</Type>
     <ClassName>org.frankframework.pipes.CsvParserPipe</ClassName>
+  </Element>
+  <Element>
+    <Name>DataSonnetPipe</Name>
+    <Type>pipe</Type>
+    <ClassName>org.frankframework.pipes.DataSonnetPipe</ClassName>
   </Element>
   <Element>
     <Name>DelayPipe</Name>

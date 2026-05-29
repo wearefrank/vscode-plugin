@@ -1,0 +1,191 @@
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-family: var(--vscode-font-family);
+    font-size: var(--vscode-font-size);
+    color: var(--vscode-foreground);
+    background-color: var(--vscode-editor-background);
+    padding: 24px;
+}
+
+.container {
+    max-width: 560px;
+}
+
+h1 {
+    font-size: 1.4em;
+    font-weight: 600;
+    margin-bottom: 24px;
+    color: var(--vscode-foreground);
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-bottom: 20px;
+}
+
+label {
+    font-weight: 600;
+    font-size: 0.95em;
+    color: var(--vscode-foreground);
+}
+
+.required {
+    color: var(--vscode-inputValidation-errorBorder);
+}
+
+.hint {
+    font-size: 0.8em;
+    color: var(--vscode-descriptionForeground);
+    margin-top: -2px;
+}
+
+input[type="text"] {
+    background-color: var(--vscode-input-background);
+    color: var(--vscode-input-foreground);
+    border: 1px solid var(--vscode-input-border, transparent);
+    border-radius: 2px;
+    padding: 6px 8px;
+    font-family: var(--vscode-font-family);
+    font-size: var(--vscode-font-size);
+    outline: none;
+    width: 100%;
+}
+
+input[type="text"]:focus {
+    border-color: var(--vscode-focusBorder);
+}
+
+input[type="text"][readonly] {
+    cursor: default;
+    opacity: 0.85;
+}
+
+.dir-picker {
+    display: flex;
+    gap: 8px;
+    align-items: stretch;
+}
+
+.dir-picker input {
+    flex: 1;
+}
+
+.config-item {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    margin-bottom: 8px;
+}
+
+.config-item input {
+    flex: 1;
+}
+
+button {
+    font-family: var(--vscode-font-family);
+    font-size: var(--vscode-font-size);
+    cursor: pointer;
+    border: none;
+    border-radius: 2px;
+    padding: 6px 12px;
+}
+
+button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.primary-button {
+    background-color: var(--vscode-button-background);
+    color: var(--vscode-button-foreground);
+    padding: 8px 20px;
+    font-weight: 600;
+}
+
+.primary-button:hover:not(:disabled) {
+    background-color: var(--vscode-button-hoverBackground);
+}
+
+.secondary-button {
+    background-color: var(--vscode-button-secondaryBackground);
+    color: var(--vscode-button-secondaryForeground);
+    white-space: nowrap;
+}
+
+.secondary-button:hover:not(:disabled) {
+    background-color: var(--vscode-button-secondaryHoverBackground);
+}
+
+.add-button {
+    background: none;
+    color: var(--vscode-textLink-foreground);
+    padding: 4px 0;
+    text-align: left;
+    border: none;
+    font-size: 0.9em;
+}
+
+.add-button:hover {
+    color: var(--vscode-textLink-activeForeground);
+    text-decoration: underline;
+}
+
+.remove-button {
+    background: none;
+    color: var(--vscode-descriptionForeground);
+    border: none;
+    padding: 4px 8px;
+    font-size: 1em;
+    line-height: 1;
+    flex-shrink: 0;
+}
+
+.remove-button:hover:not(:disabled) {
+    color: var(--vscode-errorForeground);
+}
+
+.remove-button:disabled {
+    opacity: 0.3;
+}
+
+.actions {
+    margin-top: 28px;
+}
+
+.error-banner {
+    background-color: var(--vscode-inputValidation-errorBackground);
+    border: 1px solid var(--vscode-inputValidation-errorBorder);
+    color: var(--vscode-inputValidation-errorForeground, var(--vscode-foreground));
+    padding: 8px 12px;
+    border-radius: 2px;
+    margin-bottom: 16px;
+    font-size: 0.9em;
+}
+
+.checkbox-label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 600;
+    font-size: 0.95em;
+    cursor: pointer;
+}
+
+.checkbox-label input[type="checkbox"] {
+    width: 14px;
+    height: 14px;
+    flex-shrink: 0;
+    cursor: pointer;
+    accent-color: var(--vscode-button-background);
+}
+
+.hidden {
+    display: none;
+}
