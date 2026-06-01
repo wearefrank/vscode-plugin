@@ -4,7 +4,7 @@
   "displayName": "Frank!Framework",
   "description": "A plugin to help users with the development of their Frank!Framework integrations!",
   "icon": "resources/images/android-chrome-192x192.png",
-  "version": "0.1.1",
+  "version": "1.0.0",
   "extensionDependencies": [
     "redhat.vscode-xml"
   ],
