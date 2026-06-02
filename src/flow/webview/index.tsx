@@ -1,3 +1,4 @@
+import 'reactflow/dist/style.css';
 import { useEffect, useMemo, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import ReactFlow, {
