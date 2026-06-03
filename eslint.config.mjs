@@ -1,5 +1,6 @@
 import globals from "globals";
 import typescriptEslint from "@typescript-eslint/eslint-plugin";
+import typescriptParser from "@typescript-eslint/parser";
 
 export default [
     {
@@ -42,8 +43,20 @@ export default [
         },
     },
     {
+        files: ["**/*.ts"],
         plugins: {
             "@typescript-eslint": typescriptEslint,
-        }
+        },
+        languageOptions: {
+            parser: typescriptParser,
+            globals: {
+                ...globals.node,
+            },
+        },
+        rules: {
+            ...typescriptEslint.configs.recommended.rules,
+            "@typescript-eslint/no-unused-vars": ["warn", { "argsIgnorePattern": "^_" }],
+            "@typescript-eslint/no-explicit-any": "warn",
+        },
     }
 ];
