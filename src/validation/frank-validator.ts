@@ -46,7 +46,7 @@ export class FrankValidator {
         
         const xmlDoc = parser.parseFromString(text, 'text/xml');
 
-        this.validatePipelines(xmlDoc, document, diagnostics);
+        await this.validatePipelines(xmlDoc, document, diagnostics);
         this.validateLocalSenders(xmlDoc, document, diagnostics);
         
         await this.validateExpressions(xmlDoc, document, diagnostics, token);
@@ -159,7 +159,8 @@ export class FrankValidator {
 
     private static readonly BUILT_IN_EXITS = new Set(['READY', 'exception', 'timeout']);
 
-    private validatePipelines(xmlDoc: Document, document: vscode.TextDocument, diagnostics: vscode.Diagnostic[]) {
+    private async validatePipelines(xmlDoc: Document, document: vscode.TextDocument, diagnostics: vscode.Diagnostic[]) {
+        const dir = path.dirname(document.uri.fsPath);
         const pipelines = xmlDoc.getElementsByTagName('Pipeline');
 
         for (let i = 0; i < pipelines.length; i++) {
@@ -168,10 +169,17 @@ export class FrankValidator {
 
             const allElements = pipeline.getElementsByTagName('*');
             for (let j = 0; j < allElements.length; j++) {
-                const tagName = allElements[j].tagName;
+                const el = allElements[j];
+                const tagName = el.tagName;
                 if (tagName && tagName.toLowerCase().includes('pipe')) {
-                    const name = allElements[j].getAttribute('name');
+                    const name = el.getAttribute('name');
                     if (name) validTargets.add(name);
+                }
+                if (tagName === 'Include') {
+                    const ref = el.getAttribute('ref');
+                    if (ref) {
+                        await this.collectPipeNamesFromInclude(path.join(dir, ref), validTargets);
+                    }
                 }
             }
 
@@ -184,19 +192,52 @@ export class FrankValidator {
             const forwards = pipeline.getElementsByTagName('Forward');
             for (let k = 0; k < forwards.length; k++) {
                 const forward = forwards[k];
-                const path = forward.getAttribute('path');
-                
-                if (path && !validTargets.has(path)) {
+                const forwardPath = forward.getAttribute('path');
+
+                if (forwardPath && !validTargets.has(forwardPath)) {
                     const lineNumber = (forward as unknown as LocatableNode).lineNumber - 1;
                     this.addDiagnostic(
-                        document, 
-                        diagnostics, 
-                        lineNumber, 
-                        `path="${path}"`, 
-                        `Invalid Forward: The path '${path}' does not exist in this Pipeline.`
+                        document,
+                        diagnostics,
+                        lineNumber,
+                        `path="${forwardPath}"`,
+                        `Invalid Forward: The path '${forwardPath}' does not exist in this Pipeline.`
                     );
                 }
             }
+        }
+    }
+
+    private async collectPipeNamesFromInclude(filePath: string, validTargets: Set<string>, visited: Set<string> = new Set()): Promise<void> {
+        if (visited.has(filePath)) { return; }
+        visited.add(filePath);
+
+        try {
+            const fileData = await vscode.workspace.fs.readFile(vscode.Uri.file(filePath));
+            const text = Buffer.from(fileData).toString('utf8');
+            const parser = new DOMParser({
+                locator: {},
+                errorHandler: { warning: () => {}, error: () => {}, fatalError: () => {} }
+            });
+            const doc = parser.parseFromString(text, 'text/xml');
+            const elements = doc.getElementsByTagName('*');
+            const dir = path.dirname(filePath);
+            for (let i = 0; i < elements.length; i++) {
+                const el = elements[i];
+                const tagName = el.tagName;
+                if (tagName && tagName.toLowerCase().includes('pipe')) {
+                    const name = el.getAttribute('name');
+                    if (name) { validTargets.add(name); }
+                }
+                if (tagName === 'Include') {
+                    const ref = el.getAttribute('ref');
+                    if (ref) {
+                        await this.collectPipeNamesFromInclude(path.join(dir, ref), validTargets, visited);
+                    }
+                }
+            }
+        } catch {
+            // unreadable include — skip
         }
     }
 
