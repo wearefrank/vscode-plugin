@@ -225,7 +225,7 @@ export default class FlowViewProvider implements vscode.WebviewViewProvider {
       return config;
     }
 
-    private navigateToPipe(pipeName: string, adapterName?: string) {
+    private async navigateToPipe(pipeName: string, adapterName?: string) {
       const editor = vscode.window.activeTextEditor;
       if (!editor || editor.document.languageId !== "xml") {
         return;
@@ -233,19 +233,25 @@ export default class FlowViewProvider implements vscode.WebviewViewProvider {
 
       const text = editor.document.getText();
       const match = findPipeInDocument(text, pipeName, adapterName);
-      if (!match) {
-        vscode.window.showInformationMessage(`Frank!Flow: '${pipeName}' not found in the active document.`);
+      if (match) {
+        revealMatch(editor, match);
         return;
       }
 
-      const valueStart = match.index + match[0].lastIndexOf(match[1]);
-      const startPos = editor.document.positionAt(valueStart);
-      const endPos = editor.document.positionAt(valueStart + match[1].length);
-      const selection = new vscode.Selection(startPos, endPos);
+      // Pipe not in active document — search included files
+      const dir = path.dirname(editor.document.fileName);
+      const found = await findPipeInIncludes(text, dir, pipeName);
+      if (found) {
+        const doc = await vscode.workspace.openTextDocument(found.uri);
+        const includeEditor = await vscode.window.showTextDocument(doc, {
+          viewColumn: vscode.ViewColumn.Beside,
+          preserveFocus: true,
+        });
+        revealMatch(includeEditor, found.match, true);
+        return;
+      }
 
-      editor.selection = selection;
-      editor.revealRange(selection, vscode.TextEditorRevealType.InCenter);
-      vscode.window.showTextDocument(editor.document, { viewColumn: editor.viewColumn, preserveFocus: false });
+      vscode.window.showInformationMessage(`Frank!Flow: '${pipeName}' not found in the active document.`);
     }
 
     private getWebviewShellHtml(): string {
@@ -360,6 +366,40 @@ function findPipeInDocument(text: string, pipeName: string, adapterName?: string
   const m3 = byState.exec(scope);
   if (m3) { m3.index += offset; return m3; }
 
+  return null;
+}
+
+function revealMatch(editor: vscode.TextEditor, match: RegExpExecArray, preserveFocus = false): void {
+  const valueStart = match.index + match[0].lastIndexOf(match[1]);
+  const startPos = editor.document.positionAt(valueStart);
+  const endPos = editor.document.positionAt(valueStart + match[1].length);
+  const selection = new vscode.Selection(startPos, endPos);
+  editor.selection = selection;
+  editor.revealRange(selection, vscode.TextEditorRevealType.InCenter);
+  vscode.window.showTextDocument(editor.document, { viewColumn: editor.viewColumn, preserveFocus });
+}
+
+async function findPipeInIncludes(
+  text: string,
+  dir: string,
+  pipeName: string
+): Promise<{ uri: vscode.Uri; match: RegExpExecArray } | null> {
+  const withoutComments = text.replace(/<!--[\s\S]*?-->/g, '');
+  const includeMatches = [...withoutComments.matchAll(/<Include\s+ref=["']([^"']+)["']\s*(?:\/>|><\/Include>)/gi)];
+  for (const inc of includeMatches) {
+    const relativePath = inc[1];
+    try {
+      const uri = vscode.Uri.file(path.join(dir, relativePath));
+      const fileData = await vscode.workspace.fs.readFile(uri);
+      const includeText = Buffer.from(fileData).toString('utf8');
+      const match = findPipeInDocument(includeText, pipeName);
+      if (match) {
+        return { uri, match };
+      }
+    } catch {
+      // unreadable include — skip
+    }
+  }
   return null;
 }
 

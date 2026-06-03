@@ -925,6 +925,11 @@
     <ClassName>org.frankframework.pipes.XmlIf</ClassName>
   </Element>
   <Element>
+    <Name>SwitchPipe</Name>
+    <Type>pipe</Type>
+    <ClassName>org.frankframework.pipes.SwitchPipe</ClassName>
+  </Element>
+  <Element>
     <Name>XmlSwitchPipe</Name>
     <Type>pipe</Type>
     <ClassName>org.frankframework.pipes.XmlSwitch</ClassName>

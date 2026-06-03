@@ -43,4 +43,9 @@
 	<!-- Filter out the XMLSchema Instance namespace information used for validation of Beautiful syntax -->
 	<xsl:template match="@xsi:*|xsi:*"/>
 
+	<!-- Unwrap PipelinePart so its children are treated as direct pipeline elements -->
+	<xsl:template match="PipelinePart">
+		<xsl:apply-templates select="node()"/>
+	</xsl:template>
+
 </xsl:stylesheet>

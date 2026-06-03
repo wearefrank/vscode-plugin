@@ -412,7 +412,15 @@
 						<xsl:copy>
 							<xsl:attribute name="errorHandling" select="$errorHandling or count(current-group()[@name = $errorForwards]) = count(current-group())or $target/type = 'errorhandling'"/>
 							<xsl:attribute name="name">
-								<xsl:value-of select="current-group()/@name" separator="&lt;br/>"/>
+								<xsl:choose>
+									<xsl:when test="count(current-group()) &gt; 4">
+										<xsl:value-of select="current-group()[position() &lt;= 3]/@name" separator="&lt;br/>"/>
+										<xsl:text>&lt;br/>...</xsl:text>
+									</xsl:when>
+									<xsl:otherwise>
+										<xsl:value-of select="current-group()/@name" separator="&lt;br/>"/>
+									</xsl:otherwise>
+								</xsl:choose>
 							</xsl:attribute>
 							<xsl:copy-of select="current-group()[1]/@*[not(name() = 'name')]"/>
 						</xsl:copy>
