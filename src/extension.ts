@@ -264,8 +264,10 @@ export async function activate(context: vscode.ExtensionContext) {
         });
 
         vscode.commands.registerCommand('frank.addNewUserSnippet', async function () {
-            await snippetsService.addNewUserSnippet(snippetsTreeProvider);
-            vscode.window.showInformationMessage("Snippet added!");
+            const added = await snippetsService.addNewUserSnippet(snippetsTreeProvider);
+            if (added) {
+                vscode.window.showInformationMessage("Snippet added!");
+            }
         });
     }
 

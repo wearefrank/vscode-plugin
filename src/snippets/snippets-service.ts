@@ -87,11 +87,11 @@ class SnippetsService {
         }
     }
 
-    async addNewUserSnippet(provider: SnippetsRefreshable): Promise<void> {
+    async addNewUserSnippet(provider: SnippetsRefreshable): Promise<boolean> {
         const editor = vscode.window.activeTextEditor;
 
         if (!editor) {
-            return;
+            return false;
         }
 
         const selection = editor.selection;
@@ -109,33 +109,38 @@ class SnippetsService {
         });
 
         if (!category) {
-            return;
+            return false;
         }
 
         try {
             const userSnippets = this.getUserSnippets();
 
-            let snippetsByCategory = userSnippets[category];
+            const existingKey = Object.keys(userSnippets).find(k => k.toLowerCase() === category.toLowerCase());
+            const categoryKey = existingKey ?? category;
+
+            let snippetsByCategory = userSnippets[categoryKey];
 
             if (snippetsByCategory === undefined) {
                 snippetsByCategory = [];
             }
 
             const newSnippetBody: Snippet = {
-                "prefix": category,
+                "prefix": categoryKey,
                 "body": body,
-                "description": category
+                "description": categoryKey
             };
 
             snippetsByCategory.push(newSnippetBody);
-            userSnippets[category] = snippetsByCategory;
+            userSnippets[categoryKey] = snippetsByCategory;
 
             this.setUserSnippets(userSnippets);
 
             provider.rebuild();
             provider.refresh();
+            return true;
         } catch (err) {
             console.error(err);
+            return false;
         }
     }
 
