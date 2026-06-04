@@ -9,11 +9,11 @@ suite('ExpressionValidator Test Suite', () => {
     const DUMMY_RANGE = new vscode.Range(0, 0, 0, 10);
 
     function makeActiveToken(): vscode.CancellationToken {
-        return { isCancellationRequested: false, onCancellationRequested: () => ({ dispose: () => {} }) } as any;
+        return { isCancellationRequested: false, onCancellationRequested: () => ({ dispose: () => {} }) } as unknown as vscode.CancellationToken;
     }
 
     function makeCancelledToken(): vscode.CancellationToken {
-        return { isCancellationRequested: true, onCancellationRequested: () => ({ dispose: () => {} }) } as any;
+        return { isCancellationRequested: true, onCancellationRequested: () => ({ dispose: () => {} }) } as unknown as vscode.CancellationToken;
     }
 
     // --- JSONPath ---

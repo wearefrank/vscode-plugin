@@ -1,6 +1,8 @@
 import * as vscode from 'vscode';
 import { DOMParser } from '@xmldom/xmldom';
 
+type LocatedElement = Element & { lineNumber: number };
+
 export class FrankRenameProvider implements vscode.RenameProvider {
     
     findAffectedRanges(document: vscode.TextDocument, position: vscode.Position): vscode.Range[] {
@@ -31,7 +33,7 @@ export class FrankRenameProvider implements vscode.RenameProvider {
                 const pathAttr = el.getAttribute('path');
 
                 if (nameAttr === oldName || pathAttr === oldName) {
-                    const startLine = (el as any).lineNumber - 1;
+                    const startLine = (el as LocatedElement).lineNumber - 1;
 
                     if (position.line >= startLine && position.line <= startLine + 20) {
                         targetPipeline = pipeline;
@@ -60,7 +62,7 @@ export class FrankRenameProvider implements vscode.RenameProvider {
 
         // STEP 3: Resolve each element to its text range in the document
         for (const item of elementsToRename) {
-            const startLine = (item.node as any).lineNumber - 1;
+            const startLine = (item.node as LocatedElement).lineNumber - 1;
             if (startLine < 0 || startLine >= document.lineCount) continue;
 
             // Since tags and attributes can span multiple lines in Frank! configs,
@@ -114,9 +116,9 @@ export class FrankRenameProvider implements vscode.RenameProvider {
     }
 
     prepareRename(
-        document: vscode.TextDocument, 
-        position: vscode.Position, 
-        token: vscode.CancellationToken
+        document: vscode.TextDocument,
+        position: vscode.Position,
+        _token: vscode.CancellationToken
     ): vscode.ProviderResult<vscode.Range | { range: vscode.Range; placeholder: string; }> {
         const line = document.lineAt(position.line).text;
         

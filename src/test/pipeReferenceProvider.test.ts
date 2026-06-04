@@ -31,7 +31,7 @@ suite('PipeReferenceProvider Test Suite', () => {
                 }
                 return new vscode.Position(line, off - lineOffsets[line]);
             }
-        } as any;
+        } as unknown as vscode.TextDocument;
     }
 
     test('provideReferences - finds all references within the same Pipeline', async () => {

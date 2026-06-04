@@ -19,7 +19,7 @@ suite('FrankRenameProvider Test Suite', () => {
             },
             lineAt: (line: number) => ({ text: lines[line] }),
             lineCount: lines.length,
-            positionAt: (offset: number) => new vscode.Position(0, 0), // Dummy implementation
+            positionAt: (_offset: number) => new vscode.Position(0, 0), // Dummy implementation
             uri: vscode.Uri.parse('untitled:test.xml'),
             // Mock getWordRangeAtPosition
             getWordRangeAtPosition: (position: vscode.Position, regex?: RegExp) => {
@@ -36,7 +36,7 @@ suite('FrankRenameProvider Test Suite', () => {
                 }
                 return undefined;
             }
-        } as any;
+        } as unknown as vscode.TextDocument;
     }
 
     test('prepareRename - Valid cursor position on "name" attribute', () => {
@@ -45,7 +45,7 @@ suite('FrankRenameProvider Test Suite', () => {
         // Set the cursor on the 'T' of "TestPipe" (index 12)
         const position = new vscode.Position(0, 12); 
 
-        const result = provider.prepareRename!(doc, position, {} as any) as { range: vscode.Range, placeholder: string };
+        const result = provider.prepareRename!(doc, position, {} as unknown as vscode.CancellationToken) as { range: vscode.Range, placeholder: string };
         
         assert.ok(result, "Result should not be null");
         assert.strictEqual(result.placeholder, "TestPipe", "Placeholder must be the exact attribute value");
@@ -58,7 +58,7 @@ suite('FrankRenameProvider Test Suite', () => {
         const position = new vscode.Position(0, 2); 
 
         assert.throws(() => {
-            provider.prepareRename!(doc, position, {} as any);
+            provider.prepareRename!(doc, position, {} as unknown as vscode.CancellationToken);
         }, /Place the cursor explicitly inside the quotes/);
     });
 
@@ -87,7 +87,7 @@ suite('FrankRenameProvider Test Suite', () => {
         // 'TargetPipe' starts at index 30; cursor at 32 lands on 'r', inside the value
         const position = new vscode.Position(4, 32);
 
-        const edit = provider.provideRenameEdits(doc, position, "NieuwePipeNaam", {} as any) as vscode.WorkspaceEdit;
+        const edit = provider.provideRenameEdits(doc, position, "NieuwePipeNaam", {} as unknown as vscode.CancellationToken) as vscode.WorkspaceEdit;
         
         assert.ok(edit, "WorkspaceEdit should not be null");
         

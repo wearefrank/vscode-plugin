@@ -31,7 +31,7 @@ export class SessionKeyRenameProvider implements vscode.RenameProvider {
     async prepareRename(
         document: vscode.TextDocument,
         position: vscode.Position,
-        token: vscode.CancellationToken
+        _token: vscode.CancellationToken
     ): Promise<vscode.Range | { range: vscode.Range; placeholder: string; } | undefined> {
     
     const line = document.lineAt(position.line).text;

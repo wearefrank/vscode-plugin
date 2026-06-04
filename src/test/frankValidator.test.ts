@@ -14,7 +14,7 @@ suite('FrankValidator Test Suite', () => {
             lineAt: (n: number) => ({ text: lines[n] }),
             lineCount: lines.length,
             uri: vscode.Uri.parse('untitled:test.xml'),
-        } as any;
+        } as unknown as vscode.TextDocument;
     }
 
     // Creates a DiagnosticCollection mock that captures whatever is passed to set()
@@ -23,12 +23,12 @@ suite('FrankValidator Test Suite', () => {
         const collection = {
             set: (_uri: vscode.Uri, diags: vscode.Diagnostic[]) => { captured = diags; },
             delete: () => {},
-        } as any;
+        } as unknown as vscode.DiagnosticCollection;
         return { collection, getCaptured: () => captured };
     }
 
     function createMockIndex(knownListeners: string[] = []): ConfigurationIndex {
-        return { hasJavaListener: (name: string) => knownListeners.includes(name) } as any;
+        return { hasJavaListener: (name: string) => knownListeners.includes(name) } as unknown as ConfigurationIndex;
     }
 
     // --- Pipeline validation ---
@@ -170,7 +170,7 @@ suite('FrankValidator Test Suite', () => {
             lineAt: () => ({ text: '' }),
             lineCount: 1,
             uri: vscode.Uri.parse('untitled:test.js'),
-        } as any;
+        } as unknown as vscode.TextDocument;
 
         const { collection, getCaptured } = createMockCollection();
         const validator = new FrankValidator(collection, createMockIndex());

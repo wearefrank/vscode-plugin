@@ -111,7 +111,7 @@ function addSnippet(category: string, snippet: Snippet, userSnippetsService: Sni
 }
 
 function exportUserSnippets(category: string, userSnippetsService: SnippetsService): void {
-    userSnippetsService.uploadUserSnippet(category);
+    void userSnippetsService.uploadUserSnippet(category);
 }
 
 function changeCategoryOfUserSnippets(oldCategory: string, category: string, userSnippetsService: SnippetsService, provider: SnippetsRefreshable): void {

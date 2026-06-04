@@ -171,7 +171,7 @@ export class FrankValidator {
             for (let j = 0; j < allElements.length; j++) {
                 const el = allElements[j];
                 const tagName = el.tagName;
-                if (tagName && tagName.toLowerCase().includes('pipe')) {
+                if (tagName?.toLowerCase().includes('pipe')) {
                     const name = el.getAttribute('name');
                     if (name) validTargets.add(name);
                 }
@@ -225,7 +225,7 @@ export class FrankValidator {
             for (let i = 0; i < elements.length; i++) {
                 const el = elements[i];
                 const tagName = el.tagName;
-                if (tagName && tagName.toLowerCase().includes('pipe')) {
+                if (tagName?.toLowerCase().includes('pipe')) {
                     const name = el.getAttribute('name');
                     if (name) { validTargets.add(name); }
                 }

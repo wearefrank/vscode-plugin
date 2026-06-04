@@ -1,7 +1,6 @@
 import * as vscode from 'vscode';
 import * as fs from 'fs';
 import * as path from 'path';
-import { exec } from 'child_process';
 
 import StartService from "./start/start-service";
 import SnippetsService from "./snippets/snippets-service";
@@ -19,8 +18,6 @@ import { PipeReferenceProvider } from './references/pipeReferenceProvider';
 import { showCreateFrankView } from './start/create-frank-view';
 
 let targets: Record<string, Record<string, string[]>> = {};
-let projectNameTrimmed = "skeleton";
-let configNameTrimmed = "";
 
 export async function activate(context: vscode.ExtensionContext) {
 
@@ -69,12 +66,10 @@ export async function activate(context: vscode.ExtensionContext) {
         validationCancellationTokenSource = new vscode.CancellationTokenSource();
         const token = validationCancellationTokenSource.token;
 
-        validationTimeout = setTimeout(async () => {
-            try {
-                await frankValidator.validate(document, token);
-            } catch (err) {
+        validationTimeout = setTimeout(() => {
+            void frankValidator.validate(document, token).catch(err => {
                 console.error("FrankValidator failed:", err);
-            }
+            });
         }, 300);
     };
 
@@ -130,7 +125,7 @@ export async function activate(context: vscode.ExtensionContext) {
                 }
 
                 if (config.get('enableFlowVisualization')) {
-                    flowViewProvider.updateWebview();
+                    void flowViewProvider.updateWebview();
                 }
             }
         }),
@@ -154,9 +149,9 @@ export async function activate(context: vscode.ExtensionContext) {
         vscode.workspace.onDidCloseTextDocument(doc => frankValidator.clear(doc)),
 
         vscode.window.onDidChangeActiveTextEditor(() => {
-            setStartTreeViewDescription();
+            void setStartTreeViewDescription();
             if (config.get('enableFlowVisualization')) {
-                flowViewProvider.updateWebview();
+                void flowViewProvider.updateWebview();
             }
         }),
 
@@ -199,7 +194,7 @@ export async function activate(context: vscode.ExtensionContext) {
             showCreateFrankView(context, 'simple');
         } else if (projectType?.label === "Skeleton") {
             showCreateFrankView(context, 'skeleton');
-        } else if (projectType && projectType.description) {
+        } else if (projectType?.description) {
             vscode.env.openExternal(vscode.Uri.parse(projectType.description));
         }
     });
@@ -227,15 +222,15 @@ export async function activate(context: vscode.ExtensionContext) {
     });
 
     vscode.commands.registerCommand("frank.toggleUpdate", async (item) => {
-        if (!item || item.method !== "ant") return;
+        if (item?.method !== "ant") return;
         await startService.toggleUpdate(item.path);
-        startTreeProvider.rebuild();
+        await startTreeProvider.rebuild();
         startTreeProvider.refresh();
     });
 
     if (config.get('enableSnippets')) {
         vscode.commands.registerCommand('frank.addNewCategoryOfUserSnippets', () => {
-            snippetsService.addNewCategoryOfUserSnippets(snippetsTreeProvider);
+            void snippetsService.addNewCategoryOfUserSnippets(snippetsTreeProvider);
         });
 
         vscode.commands.registerCommand("frank.deleteAllUserSnippetByCategory", (item) => {
@@ -275,23 +270,6 @@ export async function activate(context: vscode.ExtensionContext) {
         });
     }
 
-    async function copyDir(source: vscode.Uri, target: vscode.Uri): Promise<void> {
-        await vscode.workspace.fs.createDirectory(target);
-        const entries = await vscode.workspace.fs.readDirectory(source);
-
-        for (const [name, type] of entries) {
-            const src = vscode.Uri.joinPath(source, name);
-            let dest = vscode.Uri.joinPath(target, name);
-            
-            if (name === "configName") dest = vscode.Uri.joinPath(target, configNameTrimmed);
-
-            if (type === vscode.FileType.Directory) {
-                await copyDir(src, dest);
-            } else {
-                await vscode.workspace.fs.copy(src, dest, { overwrite: true });
-            }
-        }
-    }
 
     async function setStartTreeViewDescription() {
         const project = await startService.getWorkingDirectory();
@@ -300,10 +278,10 @@ export async function activate(context: vscode.ExtensionContext) {
 
     async function startHandler(item: { method: 'ant' | 'dockerCompose'; path: string }, isCurrent: boolean): Promise<void> {
         const editor = vscode.window.activeTextEditor;
-        if (config.get('enableValidation') && editor && editor.document.languageId === 'xml') {
-            frankValidator.validate(editor.document);
+        if (config.get('enableValidation') && editor?.document.languageId === 'xml') {
+            await frankValidator.validate(editor.document);
             const diagnostics = diagnosticCollection.get(editor.document.uri);
-            const hasErrors = diagnostics && diagnostics.some(d => d.severity === vscode.DiagnosticSeverity.Error);
+            const hasErrors = diagnostics?.some(d => d.severity === vscode.DiagnosticSeverity.Error);
 
             if (hasErrors) {
                 const selection = await vscode.window.showErrorMessage(
@@ -320,14 +298,6 @@ export async function activate(context: vscode.ExtensionContext) {
         }
     }
 
-    function execAsync(command: string, cwd: string): Promise<string> {
-        return new Promise((resolve, reject) => {
-            exec(command, { cwd }, (error, stdout, stderr) => {
-                if (error) reject(stderr || error);
-                else resolve(stdout);
-            });
-        });
-    }
 
     if (config.get('enableDocumentLinks')) {
         context.subscriptions.push(vscode.languages.registerDocumentLinkProvider({ language: 'xml', scheme: 'file' }, {
@@ -356,7 +326,7 @@ export async function activate(context: vscode.ExtensionContext) {
         }));
     }
 
-    setStartTreeViewDescription();
+    void setStartTreeViewDescription();
     if (config.get('enableSnippets')) {
         snippetsService.ensureSnippetsFilesExists();
         snippetsService.loadFrankFrameworkSnippets();
@@ -365,7 +335,7 @@ export async function activate(context: vscode.ExtensionContext) {
         vscode.commands.executeCommand("workbench.view.extension.flowViewContainer");
     }
 
-    if (config.get('enableValidation') && vscode.window.activeTextEditor && vscode.window.activeTextEditor.document.languageId === 'xml') {
+    if (config.get('enableValidation') && vscode.window.activeTextEditor?.document.languageId === 'xml') {
         triggerValidation(vscode.window.activeTextEditor.document);
     }
 }

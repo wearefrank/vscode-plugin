@@ -31,7 +31,7 @@ suite('MasterRenameProvider Test Suite', () => {
                 }
                 return undefined;
             }
-        } as any;
+        } as unknown as vscode.TextDocument;
     }
 
     test('prepareRename - routes to FrankRenameProvider for "name" attribute', () => {
@@ -40,7 +40,7 @@ suite('MasterRenameProvider Test Suite', () => {
         const doc = createMockDocument(`<Pipe name="TestPipe" />`);
         const position = new vscode.Position(0, 12);
 
-        const result = provider.prepareRename(doc, position, {} as any) as { range: vscode.Range; placeholder: string };
+        const result = provider.prepareRename(doc, position, {} as unknown as vscode.CancellationToken) as { range: vscode.Range; placeholder: string };
 
         assert.ok(result, 'Should return a result for a name attribute');
         assert.strictEqual(result.placeholder, 'TestPipe');
@@ -52,7 +52,7 @@ suite('MasterRenameProvider Test Suite', () => {
         const doc = createMockDocument(`<Pipe storeResultInSessionKey="myKey" />`);
         const position = new vscode.Position(0, 31);
 
-        const result = await provider.prepareRename(doc, position, {} as any) as { range: vscode.Range; placeholder: string };
+        const result = await provider.prepareRename(doc, position, {} as unknown as vscode.CancellationToken) as { range: vscode.Range; placeholder: string };
 
         assert.ok(result, 'Should return a result for a sessionKey attribute');
         assert.strictEqual(result.placeholder, 'myKey');
@@ -64,7 +64,7 @@ suite('MasterRenameProvider Test Suite', () => {
         const position = new vscode.Position(0, 1);
 
         assert.throws(
-            () => provider.prepareRename(doc, position, {} as any),
+            () => provider.prepareRename(doc, position, {} as unknown as vscode.CancellationToken),
             /Invalid rename location/
         );
     });
@@ -76,7 +76,7 @@ suite('MasterRenameProvider Test Suite', () => {
         const position = new vscode.Position(0, 14);
 
         assert.throws(
-            () => provider.prepareRename(doc, position, {} as any),
+            () => provider.prepareRename(doc, position, {} as unknown as vscode.CancellationToken),
             /Invalid rename location/
         );
     });

@@ -12,7 +12,7 @@ suite('SessionKeyRenameProvider Test Suite', () => {
             lineAt: (n: number) => ({ text: lines[n] }),
             lineCount: lines.length,
             uri: vscode.Uri.parse('untitled:test.xml'),
-        } as any;
+        } as unknown as vscode.TextDocument;
     }
 
     test('prepareRename - valid cursor inside sessionKey value returns range and placeholder', async () => {
@@ -21,7 +21,7 @@ suite('SessionKeyRenameProvider Test Suite', () => {
         const doc = createMockDocument([`<Pipe sessionKey="mySessionValue" />`]);
         const position = new vscode.Position(0, 18);
 
-        const result = await provider.prepareRename(doc, position, {} as any) as { range: vscode.Range; placeholder: string };
+        const result = await provider.prepareRename(doc, position, {} as unknown as vscode.CancellationToken) as { range: vscode.Range; placeholder: string };
 
         assert.ok(result, 'Should return a result for a sessionKey attribute');
         assert.strictEqual(result.placeholder, 'mySessionValue');
@@ -33,7 +33,7 @@ suite('SessionKeyRenameProvider Test Suite', () => {
         const doc = createMockDocument([`<Pipe storeResultInSessionKey="storedKey" />`]);
         const position = new vscode.Position(0, 31);
 
-        const result = await provider.prepareRename(doc, position, {} as any) as { range: vscode.Range; placeholder: string };
+        const result = await provider.prepareRename(doc, position, {} as unknown as vscode.CancellationToken) as { range: vscode.Range; placeholder: string };
 
         assert.ok(result, 'Should return a result for a storeResultInSessionKey attribute');
         assert.strictEqual(result.placeholder, 'storedKey');
@@ -44,7 +44,7 @@ suite('SessionKeyRenameProvider Test Suite', () => {
         const doc = createMockDocument([`<Pipe sessionKey="myKey" />`]);
         const position = new vscode.Position(0, 1);
 
-        const result = await provider.prepareRename(doc, position, {} as any);
+        const result = await provider.prepareRename(doc, position, {} as unknown as vscode.CancellationToken);
 
         assert.strictEqual(result, undefined, 'Should return undefined when cursor is outside the value quotes');
     });
@@ -55,7 +55,7 @@ suite('SessionKeyRenameProvider Test Suite', () => {
         const doc = createMockDocument([`<Pipe sessionKey="abc" />`]);
         const position = new vscode.Position(0, 18);
 
-        const result = await provider.prepareRename(doc, position, {} as any) as { range: vscode.Range; placeholder: string };
+        const result = await provider.prepareRename(doc, position, {} as unknown as vscode.CancellationToken) as { range: vscode.Range; placeholder: string };
 
         assert.ok(result);
         assert.strictEqual(result.range.start.character, 18, 'Range should start at the first character of the value');

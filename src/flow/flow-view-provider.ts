@@ -61,11 +61,11 @@ export default class FlowViewProvider implements vscode.WebviewViewProvider {
         if (msg.type === 'ready') {
           this.postState();
         } else if (msg.type === 'navigate' && typeof msg.pipeName === 'string') {
-          this.navigateToPipe(msg.pipeName, typeof msg.adapterName === 'string' ? msg.adapterName : undefined);
+          void this.navigateToPipe(msg.pipeName, typeof msg.adapterName === 'string' ? msg.adapterName : undefined);
         }
       });
 
-      this.updateWebview();
+      void this.updateWebview();
     }
 
     async updateWebview() {
@@ -92,7 +92,7 @@ export default class FlowViewProvider implements vscode.WebviewViewProvider {
     private async computeState(): Promise<WebviewState> {
       const editor = vscode.window.activeTextEditor;
 
-      if (!editor || editor.document.languageId !== "xml" || editor.document.fileName.endsWith(".xsd")) {
+      if (editor?.document.languageId !== "xml" || editor.document.fileName.endsWith(".xsd")) {
         return { kind: 'empty' };
       }
 
@@ -227,7 +227,7 @@ export default class FlowViewProvider implements vscode.WebviewViewProvider {
 
     private async navigateToPipe(pipeName: string, adapterName?: string) {
       const editor = vscode.window.activeTextEditor;
-      if (!editor || editor.document.languageId !== "xml") {
+      if (editor?.document.languageId !== "xml") {
         return;
       }
 

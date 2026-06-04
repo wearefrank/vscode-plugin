@@ -216,9 +216,9 @@ class SnippetsService {
         const targetPath = path.join(targetDir, `${category}.md`)
 
         try {
-            exec(`git reset --hard`, { cwd: targetDir}, (err) => {
-                exec(`git clean -fd`, { cwd: targetDir}, (err) => {
-                    exec(`git pull`, { cwd: targetDir }, async (err) => {
+            exec(`git reset --hard`, { cwd: targetDir}, (_err) => {
+                exec(`git clean -fd`, { cwd: targetDir}, (_err) => {
+                    exec(`git pull`, { cwd: targetDir }, (err) => { void (async () => {
                         if (err) {
                             console.error(err);
                             vscode.window.showErrorMessage("error");
@@ -276,7 +276,7 @@ class SnippetsService {
                                 saveListener.dispose();
                             }
                         });
-                    });
+                    })(); });
                 });
             });
 
