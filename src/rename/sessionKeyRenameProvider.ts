@@ -75,7 +75,8 @@ export class SessionKeyRenameProvider implements vscode.RenameProvider {
 
         // Group 1: The quote (' or ")
         // Group 2: The exact session key value (oldName)
-        const renameRegex = new RegExp(`\\b(?:\\w*sessionKey)\\s*=\\s*(["'])(${oldName})\\1`, 'gi');
+        const escapedOldName = oldName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        const renameRegex = new RegExp(`\\b(?:\\w*sessionKey)\\s*=\\s*(["'])(${escapedOldName})\\1`, 'gi');
 
         for (const fileUri of xmlFiles) {
             if (token.isCancellationRequested) {

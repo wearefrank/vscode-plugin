@@ -1,17 +1,17 @@
 import * as vscode from 'vscode';
+import * as path from 'path';
 import { DOMParser } from '@xmldom/xmldom';
 
 type LocatedElement = Element & { lineNumber: number };
 
 export class FrankRenameProvider implements vscode.RenameProvider {
-    
+
     findAffectedRanges(document: vscode.TextDocument, position: vscode.Position): vscode.Range[] {
         const wordRange = document.getWordRangeAtPosition(position, /[^"']+/);
         if (!wordRange) return [];
 
         const oldName = document.getText(wordRange);
         const text = document.getText();
-        const ranges: vscode.Range[] = [];
 
         const parser = new DOMParser({
             locator: {},
@@ -22,36 +22,52 @@ export class FrankRenameProvider implements vscode.RenameProvider {
         const pipelines = xmlDoc.getElementsByTagName('Pipeline');
         let targetPipeline: Element | null = null;
 
-        // STEP 1: Detect in which Pipeline the cursor (position.line) is located
+        // STEP 1: Find the pipeline whose line range contains the cursor
         for (let i = 0; i < pipelines.length; i++) {
             const pipeline = pipelines[i];
             const elements = pipeline.getElementsByTagName('*');
 
+            const pipelineStartLine = (pipeline as LocatedElement).lineNumber - 1;
+            let pipelineEndLine = pipelineStartLine;
+            for (let j = 0; j < elements.length; j++) {
+                const elLine = (elements[j] as LocatedElement).lineNumber - 1;
+                if (elLine > pipelineEndLine) { pipelineEndLine = elLine; }
+            }
+
+            // +5 buffer covers the closing </Pipeline> tag lines
+            if (position.line < pipelineStartLine || position.line > pipelineEndLine + 5) {
+                continue;
+            }
+
             for (let j = 0; j < elements.length; j++) {
                 const el = elements[j];
-                const nameAttr = el.getAttribute('name');
-                const pathAttr = el.getAttribute('path');
-
-                if (nameAttr === oldName || pathAttr === oldName) {
-                    const startLine = (el as LocatedElement).lineNumber - 1;
-
-                    if (position.line >= startLine && position.line <= startLine + 20) {
-                        targetPipeline = pipeline;
-                        break;
-                    }
+                if (el.getAttribute('name') === oldName || el.getAttribute('path') === oldName) {
+                    targetPipeline = pipeline;
+                    break;
                 }
             }
             if (targetPipeline) break;
         }
 
-        if (!targetPipeline) return [];
+        // Fallback for files without a <Pipeline> wrapper (e.g. PipelinePart)
+        if (!targetPipeline) {
+            const allElements = xmlDoc.getElementsByTagName('*');
+            const hasPipeWithName = Array.from(allElements).some(el =>
+                el.tagName?.toLowerCase().includes('pipe') && el.getAttribute('name') === oldName
+            );
+            if (!hasPipeWithName) return [];
+            return this.collectRanges(document, Array.from(allElements), oldName);
+        }
 
-        // STEP 2: Collect all elements in THIS pipeline that need to be adjusted
-        const elementsToRename: { node: Element, attr: string }[] = [];
-        const allElements = targetPipeline.getElementsByTagName('*');
+        // STEP 2: Collect all name= and path= matches in this pipeline
+        return this.collectRanges(document, Array.from(targetPipeline.getElementsByTagName('*')), oldName);
+    }
 
-        for (let i = 0; i < allElements.length; i++) {
-            const el = allElements[i];
+    private collectRanges(document: vscode.TextDocument, elements: Element[], oldName: string): vscode.Range[] {
+        const ranges: vscode.Range[] = [];
+        const elementsToRename: { node: Element; attr: string }[] = [];
+
+        for (const el of elements) {
             if (el.getAttribute('name') === oldName) {
                 elementsToRename.push({ node: el, attr: 'name' });
             }
@@ -60,7 +76,6 @@ export class FrankRenameProvider implements vscode.RenameProvider {
             }
         }
 
-        // STEP 3: Resolve each element to its text range in the document
         for (const item of elementsToRename) {
             const startLine = (item.node as LocatedElement).lineNumber - 1;
             if (startLine < 0 || startLine >= document.lineCount) continue;
@@ -75,13 +90,10 @@ export class FrankRenameProvider implements vscode.RenameProvider {
                 // (e.g., matching a random string inside a comment or description)
                 const searchStringDouble = `${item.attr}="${oldName}"`;
                 const searchStringSingle = `${item.attr}='${oldName}'`;
+                const offset = item.attr.length + 2;
 
                 let startIndex = lineText.indexOf(searchStringDouble);
-                const offset = item.attr.length + 2; // Compensate for the attribute name and ="
-
-                if (startIndex === -1) {
-                    startIndex = lineText.indexOf(searchStringSingle);
-                }
+                if (startIndex === -1) startIndex = lineText.indexOf(searchStringSingle);
 
                 if (startIndex !== -1) {
                     const startPos = new vscode.Position(currentLine, startIndex + offset);
@@ -95,12 +107,12 @@ export class FrankRenameProvider implements vscode.RenameProvider {
         return ranges;
     }
 
-    provideRenameEdits(
+    async provideRenameEdits(
         document: vscode.TextDocument,
         position: vscode.Position,
         newName: string,
         _token: vscode.CancellationToken
-    ): vscode.ProviderResult<vscode.WorkspaceEdit> {
+    ): Promise<vscode.WorkspaceEdit | null> {
         const ranges = this.findAffectedRanges(document, position);
 
         if (ranges.length === 0) {
@@ -112,7 +124,59 @@ export class FrankRenameProvider implements vscode.RenameProvider {
         for (const range of ranges) {
             edit.replace(document.uri, range, newName);
         }
+
+        const wordRange = document.getWordRangeAtPosition(position, /[^"']+/);
+        if (wordRange) {
+            const oldName = document.getText(wordRange);
+            await this.addCrossFileEdits(document, oldName, newName, edit);
+        }
+
         return edit;
+    }
+
+    // Find all XML files that <Include> the current file and update any
+    // path="oldName" forwards in them, so renames propagate across includes.
+    private async addCrossFileEdits(
+        document: vscode.TextDocument,
+        oldName: string,
+        newName: string,
+        edit: vscode.WorkspaceEdit
+    ): Promise<void> {
+        const currentFileName = path.basename(document.uri.fsPath);
+        const escapedFileName = currentFileName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        const escapedName = oldName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+        const includePattern = new RegExp(`<Include\\s+ref=["'][^"']*${escapedFileName}["']`, 'i');
+        const forwardPattern = new RegExp(`\\bpath=(["'])(${escapedName})\\1`, 'g');
+
+        const allXmlFiles = await vscode.workspace.findFiles('**/*.xml', '**/node_modules/**');
+
+        for (const fileUri of allXmlFiles) {
+            if (fileUri.fsPath === document.uri.fsPath) continue;
+
+            try {
+                const fileData = await vscode.workspace.fs.readFile(fileUri);
+                const fileText = Buffer.from(fileData).toString('utf8');
+
+                if (!includePattern.test(fileText)) continue;
+                if (!fileText.includes(oldName)) continue;
+
+                const doc = await vscode.workspace.openTextDocument(fileUri);
+                forwardPattern.lastIndex = 0;
+                let match;
+                while ((match = forwardPattern.exec(fileText)) !== null) {
+                    const quoteChar = match[1];
+                    const valueStart = match.index + match[0].indexOf(quoteChar) + 1;
+                    edit.replace(
+                        fileUri,
+                        new vscode.Range(doc.positionAt(valueStart), doc.positionAt(valueStart + oldName.length)),
+                        newName
+                    );
+                }
+            } catch {
+                // skip unreadable files
+            }
+        }
     }
 
     prepareRename(
@@ -121,12 +185,12 @@ export class FrankRenameProvider implements vscode.RenameProvider {
         _token: vscode.CancellationToken
     ): vscode.ProviderResult<vscode.Range | { range: vscode.Range; placeholder: string; }> {
         const line = document.lineAt(position.line).text;
-        
+
         // Strict validation: Ensure we are on a line that contains name= or path=
         if (!line.includes('name=') && !line.includes('path=')) {
             throw new Error("Invalid rename: You can only rename the 'name' attribute of Pipes or the 'path' attribute of Forwards.");
         }
-        
+
         const regex = /(?:name|path)=["']([^"']+)["']/g;
         let match;
 

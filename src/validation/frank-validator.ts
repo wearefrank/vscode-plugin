@@ -29,7 +29,7 @@ export class FrankValidator {
         if (document.languageId !== 'xml') return;
 
         const diagnostics: vscode.Diagnostic[] = [];
-        const text = document.getText();
+        const text = document.getText().replace(/^﻿/, '');
 
         // 1. Yield to the event loop before running the heavy DOM parser
         await new Promise(resolve => setTimeout(resolve, 0));
@@ -48,6 +48,7 @@ export class FrankValidator {
 
         await this.validatePipelines(xmlDoc, document, diagnostics);
         this.validateLocalSenders(xmlDoc, document, diagnostics);
+        this.validateFrankSenders(xmlDoc, document, diagnostics);
         
         await this.validateExpressions(xmlDoc, document, diagnostics, token);
         await this.validateSchemaReferences(xmlDoc, document, diagnostics, token);
@@ -115,44 +116,52 @@ export class FrankValidator {
 
         for (let i = 0; i < elements.length; i++) {
             const el = elements[i];
-            const schemaValue = el.getAttribute('schema');
-            if (!schemaValue) continue;
             if (token?.isCancellationRequested) return;
 
-            const schemaUri = vscode.Uri.file(path.join(dir, schemaValue));
+            for (const { attr, severity } of [
+                { attr: 'schema',        severity: vscode.DiagnosticSeverity.Error   },
+                { attr: 'styleSheetName', severity: vscode.DiagnosticSeverity.Warning },
+            ]) {
+                const attrValue = el.getAttribute(attr);
+                if (!attrValue) continue;
 
-            try {
-                await this.fileExistsFn(schemaUri);
-            } catch {
-                const elementLineNumber = (el as unknown as LocatableNode).lineNumber - 1;
-                if (elementLineNumber < 0 || elementLineNumber >= document.lineCount) continue;
+                const fileUri = vscode.Uri.file(path.join(dir, attrValue));
 
-                const searchStringDouble = `schema="${schemaValue}"`;
-                const searchStringSingle = `schema='${schemaValue}'`;
-                const QUOTE_OFFSET = 'schema'.length + 2;
+                try {
+                    await this.fileExistsFn(fileUri);
+                } catch {
+                    const elementLineNumber = (el as unknown as LocatableNode).lineNumber - 1;
+                    if (elementLineNumber < 0 || elementLineNumber >= document.lineCount) continue;
 
-                let startIndex = -1;
-                let attrLineNumber = elementLineNumber;
-                for (let offset = 0; offset <= 10; offset++) {
-                    const searchLine = elementLineNumber + offset;
-                    if (searchLine >= document.lineCount) break;
-                    const text = document.lineAt(searchLine).text;
-                    startIndex = text.indexOf(searchStringDouble);
-                    if (startIndex === -1) startIndex = text.indexOf(searchStringSingle);
-                    if (startIndex !== -1) { attrLineNumber = searchLine; break; }
+                    const searchStringDouble = `${attr}="${attrValue}"`;
+                    const searchStringSingle = `${attr}='${attrValue}'`;
+                    const QUOTE_OFFSET = attr.length + 2;
+
+                    let startIndex = -1;
+                    let attrLineNumber = elementLineNumber;
+                    for (let offset = 0; offset <= 10; offset++) {
+                        const searchLine = elementLineNumber + offset;
+                        if (searchLine >= document.lineCount) break;
+                        const lineContent = document.lineAt(searchLine).text;
+                        startIndex = lineContent.indexOf(searchStringDouble);
+                        if (startIndex === -1) startIndex = lineContent.indexOf(searchStringSingle);
+                        if (startIndex !== -1) { attrLineNumber = searchLine; break; }
+                    }
+
+                    const lineText = document.lineAt(attrLineNumber).text;
+                    const startCharacter = startIndex !== -1 ? startIndex + QUOTE_OFFSET : 0;
+                    const endCharacter = startIndex !== -1 ? startIndex + QUOTE_OFFSET + attrValue.length : lineText.length;
+
+                    const diagnostic = new vscode.Diagnostic(
+                        new vscode.Range(attrLineNumber, startCharacter, attrLineNumber, endCharacter),
+                        attr === 'schema'
+                            ? `Schema file not found: ${attrValue}`
+                            : `Stylesheet not found at expected path: ${attrValue}`,
+                        severity
+                    );
+                    diagnostic.source = 'Frank!Validator';
+                    diagnostics.push(diagnostic);
                 }
-
-                const lineText = document.lineAt(attrLineNumber).text;
-                const startCharacter = startIndex !== -1 ? startIndex + QUOTE_OFFSET : 0;
-                const endCharacter = startIndex !== -1 ? startIndex + QUOTE_OFFSET + schemaValue.length : lineText.length;
-
-                const diagnostic = new vscode.Diagnostic(
-                    new vscode.Range(attrLineNumber, startCharacter, attrLineNumber, endCharacter),
-                    `Schema file not found: ${schemaValue}`,
-                    vscode.DiagnosticSeverity.Error
-                );
-                diagnostic.source = 'Frank!Validator';
-                diagnostics.push(diagnostic);
             }
         }
     }
@@ -178,7 +187,16 @@ export class FrankValidator {
                 if (tagName === 'Include') {
                     const ref = el.getAttribute('ref');
                     if (ref) {
-                        await this.collectPipeNamesFromInclude(path.join(dir, ref), validTargets);
+                        const loaded = await this.collectPipeNamesFromInclude(path.join(dir, ref), validTargets);
+                        if (!loaded) {
+                            const lineNumber = (el as unknown as LocatableNode).lineNumber - 1;
+                            this.addDiagnostic(
+                                document, diagnostics, lineNumber,
+                                `ref="${ref}"`,
+                                `Include file not found or unreadable: ${ref}`,
+                                vscode.DiagnosticSeverity.Warning
+                            );
+                        }
                     }
                 }
             }
@@ -208,13 +226,13 @@ export class FrankValidator {
         }
     }
 
-    private async collectPipeNamesFromInclude(filePath: string, validTargets: Set<string>, visited: Set<string> = new Set()): Promise<void> {
-        if (visited.has(filePath)) { return; }
+    private async collectPipeNamesFromInclude(filePath: string, validTargets: Set<string>, visited: Set<string> = new Set()): Promise<boolean> {
+        if (visited.has(filePath)) { return true; }
         visited.add(filePath);
 
         try {
             const fileData = await vscode.workspace.fs.readFile(vscode.Uri.file(filePath));
-            const text = Buffer.from(fileData).toString('utf8');
+            const text = Buffer.from(fileData).toString('utf8').replace(/^﻿/, '');
             const parser = new DOMParser({
                 locator: {},
                 errorHandler: { warning: () => {}, error: () => {}, fatalError: () => {} }
@@ -236,8 +254,31 @@ export class FrankValidator {
                     }
                 }
             }
+            return true;
         } catch {
-            // unreadable include — skip
+            return false;
+        }
+    }
+
+    private validateFrankSenders(xmlDoc: Document, document: vscode.TextDocument, diagnostics: vscode.Diagnostic[]) {
+        const senders = xmlDoc.getElementsByTagName('FrankSender');
+        for (let i = 0; i < senders.length; i++) {
+            const sender = senders[i];
+            const target = sender.getAttribute('target');
+            if (!target) continue;
+
+            // Skip cross-configuration targets (format: "ConfigName/adapterName") — those
+            // adapters may live in a separate configuration not visible in this workspace.
+            if (target.includes('/')) continue;
+
+            if (!this.index.hasAdapter(target)) {
+                const lineNumber = (sender as unknown as LocatableNode).lineNumber - 1;
+                this.addDiagnostic(
+                    document, diagnostics, lineNumber,
+                    `target="${target}"`,
+                    `Unknown adapter: '${target}' is not defined in the workspace.`
+                );
+            }
         }
     }
 
@@ -265,20 +306,26 @@ export class FrankValidator {
         });
     }
 
-    private addDiagnostic(document: vscode.TextDocument, diagnostics: vscode.Diagnostic[], lineNumber: number,
-         searchString: string, message: string) {
+    private addDiagnostic(
+        document: vscode.TextDocument,
+        diagnostics: vscode.Diagnostic[],
+        lineNumber: number,
+        searchString: string,
+        message: string,
+        severity: vscode.DiagnosticSeverity = vscode.DiagnosticSeverity.Error
+    ) {
         if (lineNumber < 0 || lineNumber >= document.lineCount) return;
 
         const lineText = document.lineAt(lineNumber).text;
         const startIndex = lineText.indexOf(searchString);
-        
+
         const startCharacter = startIndex !== -1 ? startIndex : 0;
         const endCharacter = startIndex !== -1 ? startIndex + searchString.length : lineText.length;
 
         diagnostics.push(new vscode.Diagnostic(
             new vscode.Range(lineNumber, startCharacter, lineNumber, endCharacter),
             message,
-            vscode.DiagnosticSeverity.Error
+            severity
         ));
     }
 

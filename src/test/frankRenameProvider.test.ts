@@ -62,7 +62,7 @@ suite('FrankRenameProvider Test Suite', () => {
         }, /Place the cursor explicitly inside the quotes/);
     });
 
-    test('provideRenameEdits - Respect scope and handle multi-line correctly', () => {
+    test('provideRenameEdits - Respect scope and handle multi-line correctly', async () => {
         // A test configuration with two adapters and multi-line tags
         const xml = `
         <Configuration>
@@ -87,7 +87,7 @@ suite('FrankRenameProvider Test Suite', () => {
         // 'TargetPipe' starts at index 30; cursor at 32 lands on 'r', inside the value
         const position = new vscode.Position(4, 32);
 
-        const edit = provider.provideRenameEdits(doc, position, "NieuwePipeNaam", {} as unknown as vscode.CancellationToken) as vscode.WorkspaceEdit;
+        const edit = await provider.provideRenameEdits(doc, position, "NieuwePipeNaam", {} as unknown as vscode.CancellationToken) as vscode.WorkspaceEdit;
         
         assert.ok(edit, "WorkspaceEdit should not be null");
         

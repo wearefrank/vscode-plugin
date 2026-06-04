@@ -178,6 +178,7 @@ export default class FlowViewProvider implements vscode.WebviewViewProvider {
     // files' own includes/entities are also expanded (transitive resolution).
     // Strip XML comments first so patterns inside example comments are ignored.
     private async resolveIncludesAndEntities(config: string, dir: string): Promise<string> {
+      config = config.replace(/^﻿/, '');
       const MAX_PASSES = 10;
       for (let pass = 0; pass < MAX_PASSES; pass++) {
         const configWithoutComments: string = config.replace(/<!--[\s\S]*?-->/g, '');
@@ -191,7 +192,7 @@ export default class FlowViewProvider implements vscode.WebviewViewProvider {
             const entityUri = vscode.Uri.file(path.join(dir, relativePath));
             const fileData = await vscode.workspace.fs.readFile(entityUri);
             let entityContent = Buffer.from(fileData).toString('utf8');
-            entityContent = entityContent.replace(/<\?xml[^>]*\?>/gi, '');
+            entityContent = entityContent.replace(/^﻿/, '').replace(/<\?xml[^>]*\?>/gi, '');
             const before: string = config;
             config = config.replace(new RegExp(`&${entityName};`, 'g'), () => entityContent);
             if (config !== before) { changed = true; }
@@ -202,7 +203,7 @@ export default class FlowViewProvider implements vscode.WebviewViewProvider {
           }
         }
 
-        const includeMatches: RegExpMatchArray[] = [...configWithoutComments.matchAll(/<Include\s+ref=["']([^"']+)["']\s*(?:\/>|><\/Include>)/gi)];
+        const includeMatches: RegExpMatchArray[] = [...configWithoutComments.matchAll(/<Include\s+ref=["']([^"']+)["']\s*(?:\/>|>\s*<\/Include>)/gi)];
         for (const match of includeMatches) {
           const fullMatch: string = match[0];
           const relativePath: string = match[1];
@@ -210,7 +211,7 @@ export default class FlowViewProvider implements vscode.WebviewViewProvider {
             const includeUri = vscode.Uri.file(path.join(dir, relativePath));
             const fileData = await vscode.workspace.fs.readFile(includeUri);
             let includeContent = Buffer.from(fileData).toString('utf8');
-            includeContent = includeContent.replace(/<\?xml[^>]*\?>/gi, '');
+            includeContent = includeContent.replace(/^﻿/, '').replace(/<\?xml[^>]*\?>/gi, '');
             config = config.replace(fullMatch, () => includeContent);
             changed = true;
           } catch (error) {
@@ -385,7 +386,7 @@ async function findPipeInIncludes(
   pipeName: string
 ): Promise<{ uri: vscode.Uri; match: RegExpExecArray } | null> {
   const withoutComments = text.replace(/<!--[\s\S]*?-->/g, '');
-  const includeMatches = [...withoutComments.matchAll(/<Include\s+ref=["']([^"']+)["']\s*(?:\/>|><\/Include>)/gi)];
+  const includeMatches = [...withoutComments.matchAll(/<Include\s+ref=["']([^"']+)["']\s*(?:\/>|>\s*<\/Include>)/gi)];
   for (const inc of includeMatches) {
     const relativePath = inc[1];
     try {
