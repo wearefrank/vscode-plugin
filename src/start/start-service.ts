@@ -14,9 +14,22 @@ class StartService {
         try { await fsp.access(p); return true; } catch { return false; }
     }
 
+    // Returns true when projectPath is the workspace root itself or a direct child of one.
+    // This prevents deeply-nested demo/example projects (e.g. frank-runner/examples/*)
+    // from appearing as startable items alongside real application projects.
+    private isShallowProject(projectPath: string): boolean {
+        const workspaceFolders = vscode.workspace.workspaceFolders || [];
+        return workspaceFolders.some(folder => {
+            const rel = path.relative(folder.uri.fsPath, projectPath);
+            return rel === '' || (!rel.startsWith('..') && !rel.includes(path.sep));
+        });
+    }
+
     async discoverAntProjects(): Promise<string[]> {
         const buildFiles = await vscode.workspace.findFiles('**/build.xml', '**/node_modules/**');
-        return buildFiles.map(uri => path.dirname(uri.fsPath));
+        return buildFiles
+            .map(uri => path.dirname(uri.fsPath))
+            .filter(p => this.isShallowProject(p));
     }
 
     async discoverDockerProjects(): Promise<string[]> {
@@ -39,7 +52,11 @@ class StartService {
             if (idx !== -1) projectRoots.add(file.fsPath.substring(0, idx));
         }
 
-        return Array.from(projectRoots);
+        // Drop sub-paths produced by the simple-layout glob accidentally matching Maven paths.
+        const roots = Array.from(projectRoots);
+        return roots
+            .filter(r => !roots.some(other => other !== r && r.startsWith(other + path.sep)))
+            .filter(r => this.isShallowProject(r));
     }
 
     async detectConfigurationsDir(projectRoot: string): Promise<string> {
@@ -129,14 +146,9 @@ class StartService {
         return null;
     }
 
-    async getWorkingDirectory(): Promise<string | null> {
-        return this.getAntWorkingDirectory();
-    }
-
     async getComposeFile(dir: string): Promise<string | null> {
         const isComposeFile = (filename: string) =>
-            filename.toLowerCase().includes("compose") &&
-            (filename.endsWith(".yml") || filename.endsWith(".yaml"));
+            filename.toLowerCase() == "docker-compose.yaml" || filename.toLowerCase() == "docker-compose.yml";
 
         const files = await fsp.readdir(dir);
         return files.find(isComposeFile) ?? null;
@@ -287,42 +299,13 @@ class StartService {
         return false;
     }
 
-    async ensureRanProjectsFileExists(): Promise<void> {
-        const storageDir = this.context.globalStorageUri.fsPath;
-        const ranProjectsPath = path.join(storageDir, 'ranProjects.json');
-        await fsp.mkdir(storageDir, { recursive: true });
-        if (!await this.exists(ranProjectsPath)) {
-            await fsp.writeFile(ranProjectsPath, JSON.stringify({ ant: [], docker: [], dockerCompose: [] }, null, 4), 'utf8');
-        }
-    }
-
-    async deleteRanProject(method: string, workingDir: string): Promise<void> {
-        const ranProjectsPath = path.join(this.context.globalStorageUri.fsPath, 'ranProjects.json');
-        const ranProjectsJSON = JSON.parse(await fsp.readFile(ranProjectsPath, 'utf8'));
-        ranProjectsJSON[method] = ranProjectsJSON[method].filter((p: { path: string }) => p.path !== workingDir);
-        await fsp.writeFile(ranProjectsPath, JSON.stringify(ranProjectsJSON, null, 4), 'utf8');
-    }
-
-    async saveRanProject(method: string, workingDir: string): Promise<void> {
-        const ranProjectsPath = path.join(this.context.globalStorageUri.fsPath, 'ranProjects.json');
-        const ranProjectsJSON = JSON.parse(await fsp.readFile(ranProjectsPath, 'utf8'));
-        const alreadyExists = ranProjectsJSON[method].some((p: { path: string }) => p.path === workingDir);
-        if (alreadyExists) return;
-        ranProjectsJSON[method].push({ project: path.basename(workingDir), path: workingDir });
-        await fsp.writeFile(ranProjectsPath, JSON.stringify(ranProjectsJSON, null, 4), 'utf8');
-    }
-
     private async isDockerAvailable(): Promise<boolean> {
         return new Promise(resolve => {
             exec('docker --version', (error) => resolve(!error));
         });
     }
 
-    async startWithAnt(workingDir: string | null | undefined, isCurrent: boolean) {
-        if (isCurrent) {
-            workingDir = await this.getAntWorkingDirectory();
-        }
-
+    async startWithAnt(workingDir: string | null) {
         if (!workingDir) {
             vscode.window.showErrorMessage("No Frank project found. Open a file inside a Frank project (containing build.xml).");
             return;
@@ -353,11 +336,7 @@ class StartService {
         }
     }
 
-    async startWithDockerCompose(workingDir: string | null | undefined, isCurrent: boolean) {
-        if (isCurrent) {
-            workingDir = await this.getDockerWorkingDirectory();
-        }
-
+    async startWithDockerCompose(workingDir: string | null) {
         if (!workingDir) {
             vscode.window.showErrorMessage("No Frank project found. Open a file inside a project containing src/main/configurations.");
             return;

@@ -220,12 +220,6 @@ export async function activate(context: vscode.ExtensionContext) {
         startTreeProvider.refresh();
     });
 
-    vscode.commands.registerCommand("frank.deleteProject", async function (item) {
-        await startService.deleteRanProject(item.method, item.path);
-        await startTreeProvider.rebuild();
-        startTreeProvider.refresh();
-    });
-
     vscode.commands.registerCommand("frank.toggleUpdate", async (item) => {
         if (!item || item.method !== "ant") return;
         await startService.toggleUpdate(item.path);
@@ -294,11 +288,17 @@ export async function activate(context: vscode.ExtensionContext) {
     }
 
     async function setStartTreeViewDescription() {
-        const project = await startService.getWorkingDirectory();
+        const project = await startService.getAntWorkingDirectory() ?? await startService.getDockerWorkingDirectory();
         startTreeView.description = project ? path.basename(project) : "No Project Open in Editor/No Runable File Found";
     }
 
-    async function startHandler(item: { method: 'ant' | 'dockerCompose'; path: string }, isCurrent: boolean): Promise<void> {
+    async function startHandler(item: { method: 'ant' | 'dockerCompose'; path?: string }, isCurrent: boolean): Promise<void> {
+        const workingDir = isCurrent
+            ? (item.method === 'ant'
+                ? await startService.getAntWorkingDirectory()
+                : await startService.getDockerWorkingDirectory())
+            : (item.path ?? null);
+
         const editor = vscode.window.activeTextEditor;
         if (config.get('enableValidation') && editor && editor.document.languageId === 'xml') {
             frankValidator.validate(editor.document);
@@ -315,8 +315,8 @@ export async function activate(context: vscode.ExtensionContext) {
         }
 
         switch (item.method) {
-            case "ant": await startService.startWithAnt(item.path, isCurrent); break;
-            case "dockerCompose": await startService.startWithDockerCompose(item.path, isCurrent); break;
+            case "ant": await startService.startWithAnt(workingDir); break;
+            case "dockerCompose": await startService.startWithDockerCompose(workingDir); break;
         }
     }
 
