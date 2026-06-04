@@ -218,7 +218,7 @@ class SnippetsService {
         try {
             exec(`git reset --hard`, { cwd: targetDir}, (_err) => {
                 exec(`git clean -fd`, { cwd: targetDir}, (_err) => {
-                    exec(`git pull`, { cwd: targetDir }, (err) => { void (async () => {
+                    exec(`git pull`, { cwd: targetDir }, async (err) => {
                         if (err) {
                             console.error(err);
                             vscode.window.showErrorMessage("error");
@@ -276,7 +276,7 @@ class SnippetsService {
                                 saveListener.dispose();
                             }
                         });
-                    })(); });
+                    });
                 });
             });
 

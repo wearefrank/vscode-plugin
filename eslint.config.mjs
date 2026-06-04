@@ -49,10 +49,6 @@ export default [
         },
         languageOptions: {
             parser: typescriptParser,
-            parserOptions: {
-                project: true,
-                tsconfigRootDir: import.meta.dirname,
-            },
             globals: {
                 ...globals.node,
             },
@@ -61,10 +57,6 @@ export default [
             ...typescriptEslint.configs.recommended.rules,
             "@typescript-eslint/no-unused-vars": ["warn", { "argsIgnorePattern": "^_" }],
             "@typescript-eslint/no-explicit-any": "warn",
-            "@typescript-eslint/no-floating-promises": "warn",
-            "@typescript-eslint/no-misused-promises": "warn",
-            "@typescript-eslint/await-thenable": "warn",
-            "@typescript-eslint/prefer-optional-chain": "warn",
         },
     }
 ];

@@ -26,7 +26,7 @@ class StartTreeProvider {
             this.refresh();
         });
 
-        void this.rebuild().then(() => this.refresh());
+        this.rebuild().then(() => this.refresh());
     }
 
     refresh(): void {

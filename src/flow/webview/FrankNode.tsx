@@ -28,7 +28,7 @@ export default function FrankNode({ data, selected }: NodeProps<FrankNodeData>) 
         textAlign: 'center',
         padding: '4px 6px',
         cursor: 'pointer',
-        fontFamily: '"Inter", "trebuchet ms", sans-serif',
+        fontFamily: 'var(--vscode-editor-font-family)',
         color: 'var(--vscode-editor-foreground)',
         outline: selected ? '2px solid var(--vscode-focusBorder)' : 'none',
         overflow: 'hidden',
@@ -42,7 +42,7 @@ export default function FrankNode({ data, selected }: NodeProps<FrankNodeData>) 
           style={{
             fontSize: 10,
             lineHeight: 1.2,
-            color: '#909090',
+            color: 'var(--vscode-descriptionForeground)',
             marginTop: 2,
             overflow: 'hidden',
             textOverflow: 'ellipsis',
