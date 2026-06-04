@@ -355,16 +355,20 @@ class SnippetsService {
 
         const repoUrl = "https://github.com/frankframework/frankframework.wiki.git";
         const targetDir = path.join(storagePath, "frankframework.wiki");
+        const gitDir = path.join(targetDir, ".git");
 
-        fs.rmSync(targetDir, { recursive: true, force: true });
-
-        exec(`git clone "${repoUrl}" "${targetDir}"`, { cwd: storagePath }, (err) => {
-            if (err) {
-                console.error(err);
-            }
-
+        const afterFetch = (err: Error | null) => {
+            if (err) { console.error(err); }
             this.extractSnippets(targetDir);
-        });
+        };
+
+        if (fs.existsSync(gitDir)) {
+            // Repo already cloned — pull latest instead of delete+reclone.
+            // Avoids EPERM on Windows where git marks object files read-only.
+            exec(`git -C "${targetDir}" pull --ff-only`, afterFetch);
+        } else {
+            exec(`git clone "${repoUrl}" "${targetDir}"`, { cwd: storagePath }, afterFetch);
+        }
     }
 }
 
