@@ -1,7 +1,33 @@
 import * as vscode from 'vscode';
 
 export class SessionKeyRenameProvider implements vscode.RenameProvider {
-    
+
+    findHighlightRanges(document: vscode.TextDocument, position: vscode.Position): vscode.Range[] {
+        const wordRange = document.getWordRangeAtPosition(position, /[^"']+/);
+        if (!wordRange) return [];
+
+        const oldName = document.getText(wordRange);
+        const ranges: vscode.Range[] = [];
+        const escaped = oldName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        const regex = new RegExp(`\\b(?:\\w*sessionKey)\\s*=\\s*(["'])(${escaped})\\1`, 'gi');
+
+        for (let i = 0; i < document.lineCount; i++) {
+            const lineText = document.lineAt(i).text;
+            let match;
+            regex.lastIndex = 0;
+            while ((match = regex.exec(lineText)) !== null) {
+                const quoteType = match[1];
+                const valueStartIndex = match.index + match[0].indexOf(quoteType) + 1;
+                ranges.push(new vscode.Range(
+                    new vscode.Position(i, valueStartIndex),
+                    new vscode.Position(i, valueStartIndex + oldName.length)
+                ));
+            }
+        }
+
+        return ranges;
+    }
+
     async prepareRename(
         document: vscode.TextDocument,
         position: vscode.Position,

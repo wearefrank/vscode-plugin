@@ -80,8 +80,10 @@ export async function activate(context: vscode.ExtensionContext) {
 
     if (config.get('enableRename')) {
         frankRenameHintProvider.register(context);
+        const masterRenameProvider = new MasterRenameProvider();
         context.subscriptions.push(
-            vscode.languages.registerRenameProvider({ language: 'xml' }, new MasterRenameProvider())
+            masterRenameProvider,
+            vscode.languages.registerRenameProvider({ language: 'xml' }, masterRenameProvider)
         );
     }
 

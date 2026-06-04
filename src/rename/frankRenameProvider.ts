@@ -3,22 +3,14 @@ import { DOMParser } from '@xmldom/xmldom';
 
 export class FrankRenameProvider implements vscode.RenameProvider {
     
-    provideRenameEdits(
-        document: vscode.TextDocument,
-        position: vscode.Position,
-        newName: string,
-        token: vscode.CancellationToken
-    ): vscode.ProviderResult<vscode.WorkspaceEdit> {
-        
-        // Match the name based on a valid XML attribute value
+    findAffectedRanges(document: vscode.TextDocument, position: vscode.Position): vscode.Range[] {
         const wordRange = document.getWordRangeAtPosition(position, /[^"']+/);
-        if (!wordRange) return null;
+        if (!wordRange) return [];
 
         const oldName = document.getText(wordRange);
         const text = document.getText();
-        const edit = new vscode.WorkspaceEdit();
+        const ranges: vscode.Range[] = [];
 
-        // Initialize the XML Parser with a locator to get line numbers
         const parser = new DOMParser({
             locator: {},
             errorHandler: { warning: () => {}, error: () => {}, fatalError: () => {} }
@@ -32,15 +24,15 @@ export class FrankRenameProvider implements vscode.RenameProvider {
         for (let i = 0; i < pipelines.length; i++) {
             const pipeline = pipelines[i];
             const elements = pipeline.getElementsByTagName('*');
-            
+
             for (let j = 0; j < elements.length; j++) {
                 const el = elements[j];
                 const nameAttr = el.getAttribute('name');
                 const pathAttr = el.getAttribute('path');
-                
+
                 if (nameAttr === oldName || pathAttr === oldName) {
                     const startLine = (el as any).lineNumber - 1;
-                    
+
                     if (position.line >= startLine && position.line <= startLine + 20) {
                         targetPipeline = pipeline;
                         break;
@@ -50,28 +42,23 @@ export class FrankRenameProvider implements vscode.RenameProvider {
             if (targetPipeline) break;
         }
 
-        if (!targetPipeline) {
-            vscode.window.showInformationMessage("Rename action canceled: Cursor is not within a recognizable <Pipeline> scope.");
-            return null;
-        }
+        if (!targetPipeline) return [];
 
         // STEP 2: Collect all elements in THIS pipeline that need to be adjusted
         const elementsToRename: { node: Element, attr: string }[] = [];
         const allElements = targetPipeline.getElementsByTagName('*');
-        
+
         for (let i = 0; i < allElements.length; i++) {
             const el = allElements[i];
-            // Check for 'name' (Pipes/Exits)
             if (el.getAttribute('name') === oldName) {
                 elementsToRename.push({ node: el, attr: 'name' });
             }
-            // Check for 'path' (Forwards)
             if (el.getAttribute('path') === oldName) {
                 elementsToRename.push({ node: el, attr: 'path' });
             }
         }
 
-        // STEP 3: Build text edits
+        // STEP 3: Resolve each element to its text range in the document
         for (const item of elementsToRename) {
             const startLine = (item.node as any).lineNumber - 1;
             if (startLine < 0 || startLine >= document.lineCount) continue;
@@ -81,14 +68,14 @@ export class FrankRenameProvider implements vscode.RenameProvider {
             // A limit of 10 lines prevents unnecessarily deep scanning of the document.
             for (let currentLine = startLine; currentLine <= startLine + 10 && currentLine < document.lineCount; currentLine++) {
                 const lineText = document.lineAt(currentLine).text;
-                
+
                 // Explicitly search for the attribute assignment to prevent false positives
                 // (e.g., matching a random string inside a comment or description)
                 const searchStringDouble = `${item.attr}="${oldName}"`;
                 const searchStringSingle = `${item.attr}='${oldName}'`;
-                
+
                 let startIndex = lineText.indexOf(searchStringDouble);
-                let offset = item.attr.length + 2; // Compensate for the attribute name and ="
+                const offset = item.attr.length + 2; // Compensate for the attribute name and ="
 
                 if (startIndex === -1) {
                     startIndex = lineText.indexOf(searchStringSingle);
@@ -97,13 +84,32 @@ export class FrankRenameProvider implements vscode.RenameProvider {
                 if (startIndex !== -1) {
                     const startPos = new vscode.Position(currentLine, startIndex + offset);
                     const endPos = new vscode.Position(currentLine, startIndex + offset + oldName.length);
-
-                    edit.replace(document.uri, new vscode.Range(startPos, endPos), newName);
+                    ranges.push(new vscode.Range(startPos, endPos));
                     break;
                 }
             }
         }
 
+        return ranges;
+    }
+
+    provideRenameEdits(
+        document: vscode.TextDocument,
+        position: vscode.Position,
+        newName: string,
+        _token: vscode.CancellationToken
+    ): vscode.ProviderResult<vscode.WorkspaceEdit> {
+        const ranges = this.findAffectedRanges(document, position);
+
+        if (ranges.length === 0) {
+            vscode.window.showInformationMessage("Rename action canceled: Cursor is not within a recognizable <Pipeline> scope.");
+            return null;
+        }
+
+        const edit = new vscode.WorkspaceEdit();
+        for (const range of ranges) {
+            edit.replace(document.uri, range, newName);
+        }
         return edit;
     }
 
